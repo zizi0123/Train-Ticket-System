@@ -8,7 +8,7 @@ int main() {
 //    freopen("outtt","w",stdout);
     int num;
     std::cin >> num;
-    bpt<std::string,int> bpt("index_file", "seq_file");
+    bpt<int,int> bpt("index_file", "seq_file");
     char x;
     std::cin.get(x);
     int find4=0;
@@ -34,9 +34,9 @@ int main() {
             value[strlen(command) - (j1 + j2 + 2)] = '\0';
             int int_value = atoi(value);
             if (strcmp("insert", info) == 0) {
-                bpt.Insert(index, int_value);
+                bpt.Insert(atoi(index), int_value);
             } else {
-                bpt.Erase(index, int_value);
+                bpt.Erase(atoi(index), int_value);
             }
         } else if(strcmp("find", info) == 0){
             char index[70];
@@ -49,8 +49,10 @@ int main() {
                 }
                 k++;
             }
-            bpt.Find(index);
+            bpt.Find(atoi(index));
         }
         delete[] command;
     }
 }
+
+// TODO 增加可以赋值可以写到外存的string类

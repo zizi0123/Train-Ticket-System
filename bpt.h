@@ -7,7 +7,7 @@
 #include <cstring>
 #include <stack>
 
-const int M = 1000, L = 1000; // todo 改成正确的值
+const int M = 4, L = 4; // todo 改成正确的值
 
 template<class Key, class Val>
 struct pair {
@@ -109,12 +109,14 @@ private:
     std::fstream seq_iof;
     int num_index;
     int num_seq;
-//    int root_pos;
+    int root_pos;
     tree_block<Key, Val> root; // 把根放在文件的开头
 //    bool if_empty;
     Buffer<Key, Val> buffer;
 
-    int FindLeafBlock(pair<Key, Val>); // 为Insert和Erase服务的寻找叶子结点位置的函数
+    int FindLeafBlock(const pair<Key, Val>&); // 为Insert和Erase服务的寻找叶子结点位置的函数
+
+    int FindLeafBlock(const Key&);
     void InsertTreeNode(const pair<Key,Val> &,const int &pos);
 
 public:
