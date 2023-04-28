@@ -72,11 +72,12 @@ struct leaf_block {
     int num = 0; //存了几个元素
     int my_pos = 0;
     int next_pos = -1; //顺序遍历，下一个leave_block的位置. -1表示本叶节点已经是最后一个节点了。
+    int last_pos = -1; //顺序遍历，上一个leave_block的位置. -1表示本叶节点已经是第一个节点了。
     pair<Key, Val> contents[L + 1];
 
     leaf_block() = default;
 
-    leaf_block(const int &,const int &,const int &);
+    leaf_block(const int &,const int &,const int &,const int &);
 
     void split();
 };
@@ -86,18 +87,6 @@ void leaf_block<Key, Val>::split() {
 
 }
 
-template<class Key, class Val>
-struct Buffer {
-    std::stack<pack<Key, Val>> chain;
-    tree_block<Key, Val> l_bro_tree;
-    tree_block<Key, Val> r_bro_tree;
-    leaf_block<Key, Val> l_bro_leaf;
-    leaf_block<Key, Val> r_bro_leaf;
-
-    void clear() {
-        for (int i = 1; i <= chain.size(); ++i) chain.pop();
-    }
-};
 
 template<class Key, class Val>
 class bpt {
@@ -112,13 +101,15 @@ private:
     int root_pos;
     tree_block<Key, Val> root; // 把根放在文件的开头
 //    bool if_empty;
-    Buffer<Key, Val> buffer;
+    std::stack<pack<Key, Val>> buffer;
 
     int FindLeafBlock(const pair<Key, Val>&); // 为Insert和Erase服务的寻找叶子结点位置的函数
 
-    int FindLeafBlock(const Key&);
-    void InsertTreeNode(const pair<Key,Val> &,const int &pos);
-
+    int FindLeafBlockFind(const Key&);
+    void InsertTreeNode(const pair<Key,Val> &,const int &pos); //在当前栈顶的tree_block的指定位置插入一个新的tree_node索引值
+    void ModifyTreeNode(const pair<Key,Val>&); //更改当前栈顶的tree_block的指定位置tree_node的索引值
+    void EraseTreeNode(); //删除当前栈顶的tree_block指定位置的tree_node
+    void ClearBuffer();
 public:
 
     bpt(const char *, const char *);
