@@ -1,14 +1,11 @@
 #include "bpt.h"
-#include <iostream>
-#include <cstring>
-
 
 int main() {
 //    freopen("../makedata/in","r",stdin);
-//    freopen("outtt","w",stdout);
+//    freopen("../my_out","w",stdout);
     int num;
     std::cin >> num;
-    bpt<int,int> bpt("index_file", "seq_file");
+    bpt<MyString,int> bpt("index_file", "seq_file");
     char x;
     std::cin.get(x);
     int find4=0;
@@ -23,33 +20,35 @@ int main() {
         strncpy(info, command, j1);
         info[j1] = '\0';
         if (strcmp("insert", info) == 0 || strcmp("delete", info) == 0) {
-            char index[70], value[15];
+            char value[15];
+            MyString index;
             int j2 = 0;
             for (; j2 < strlen(command); ++j2) {
                 if (command[j2 + j1 + 1] == ' ') break;
             }
-            strncpy(index, command + j1 + 1, j2);
-            index[j2] = '\0';
+            strncpy(index.string, command + j1 + 1, j2);
+            index.string[j2] = '\0';
             strcpy(value, command + j1 + j2 + 2);
             value[strlen(command) - (j1 + j2 + 2)] = '\0';
             int int_value = atoi(value);
             if (strcmp("insert", info) == 0) {
-                bpt.Insert(atoi(index), int_value);
+                bpt.Insert(index, int_value);
             } else {
-                bpt.Erase(atoi(index), int_value);
+                bpt.Erase(index, int_value);
             }
         } else if(strcmp("find", info) == 0){
-            char index[70];
+            MyString index;
             int k=j1+1;
             while(true){
                 if(command[k]==' ' || command[k]=='\0' ||command[k]=='\n'){
-                    strncpy(index,command+j1+1,k-j1-1);
-                    index[k-j1-1] = '\0';
+                    strncpy(index.string,command+j1+1,k-j1-1);
+                    index.string[k-j1-1] = '\0';
                     break;
                 }
                 k++;
             }
-            bpt.Find(atoi(index));
+//            std::cout<<"find "<<index.string<<"  ";
+            bpt.Find(index);
         }
         delete[] command;
     }

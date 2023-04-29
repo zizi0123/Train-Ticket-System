@@ -4,10 +4,11 @@
 
 #include <string>
 #include <fstream>
+#include <iostream>
 #include <cstring>
 #include <stack>
 
-const int M = 4, L = 4; // todo 改成正确的值
+const int M = 66, L = 71; // todo 改成正确的值
 
 template<class Key, class Val>
 struct pair {
@@ -35,7 +36,7 @@ struct tree_node {
 
     tree_node() = default;
 
-    tree_node(const pair<Key,Val> & _data, const int &pos);
+    tree_node(const pair<Key, Val> &_data, const int &pos);
 };
 
 template<class Key, class Val>
@@ -47,17 +48,16 @@ struct tree_block {
 
     tree_block() = default;
 
-    tree_block(const bool &,const int &,const int &);
+    tree_block(const bool &, const int &, const int &);
 };
 
 
-
 template<class Key, class Val>
-struct pack{
+struct pack {
     int pos; // block的第几个tree_node在链上
-    tree_block<Key,Val> block;
+    tree_block<Key, Val> block;
 
-    pack(const tree_block<Key,Val> &,const int &);
+    pack(const tree_block<Key, Val> &, const int &);
 };
 
 template<class Key, class Val>
@@ -77,15 +77,9 @@ struct leaf_block {
 
     leaf_block() = default;
 
-    leaf_block(const int &,const int &,const int &,const int &);
+    leaf_block(const int &, const int &, const int &, const int &);
 
-    void split();
 };
-
-template<class Key, class Val>
-void leaf_block<Key, Val>::split() {
-
-}
 
 
 template<class Key, class Val>
@@ -103,26 +97,91 @@ private:
 //    bool if_empty;
     std::stack<pack<Key, Val>> buffer;
 
-    int FindLeafBlock(const pair<Key, Val>&); // 为Insert和Erase服务的寻找叶子结点位置的函数
+    int FindLeafBlock(const pair<Key, Val> &); // 为Insert和Erase服务的寻找叶子结点位置的函数
 
-    int FindLeafBlockFind(const Key&);
-    void InsertTreeNode(const pair<Key,Val> &,const int &pos); //在当前栈顶的tree_block的指定位置插入一个新的tree_node索引值
-    void ModifyTreeNode(const pair<Key,Val>&); //更改当前栈顶的tree_block的指定位置tree_node的索引值
+    int FindLeafBlockFind(const Key &);
+
+    void InsertTreeNode(const pair<Key, Val> &, const int &pos); //在当前栈顶的tree_block的指定位置插入一个新的tree_node索引值
+    void ModifyTreeNode(const pair<Key, Val> &); //更改当前栈顶的tree_block的指定位置tree_node的索引值
     void EraseTreeNode(); //删除当前栈顶的tree_block指定位置的tree_node
     void ClearBuffer();
+
 public:
 
     bpt(const char *, const char *);
 
     ~bpt();
 
-    void Insert(const Key &,const Val &);
+    void Insert(const Key &, const Val &);
 
-    void Erase(const Key &,const Val &);
+    void Erase(const Key &, const Val &);
 
     void Find(const Key &);
 
 
+};
+
+class MyString {
+public:
+
+    char string[50];
+
+    MyString() {
+        string[0] = '\0';
+    }
+
+    MyString(const MyString &other) {
+        int i = 0;
+        while(true){
+            string[i] = other.string[i];
+            if(string[i] == '\0') break;
+            ++i;
+        }
+    }
+
+    MyString &operator=(const MyString &other) {
+        if (&other == this) return *this;
+        int i = 0;
+        while(true){
+            string[i] = other.string[i];
+            if(string[i] == '\0') break;
+            ++i;
+        }
+        return *this;
+    }
+
+    friend bool operator<(const MyString &a, const MyString &b) {
+        int i;
+        for (i = 0; a.string[i]!='\0' && b.string[i]!='\0'; ++i) {
+            if (a.string[i] < b.string[i]) return true;
+            if (a.string[i] > b.string[i]) return false;
+
+        }
+        // 说明前一段都相等
+        return a.string[i] == '\0' && b.string[i] != '\0';
+    }
+
+    friend bool operator==(const MyString &a, const MyString &b) {
+        int i;
+        for (i = 0; a.string[i]!='\0' && b.string[i]!='\0'; ++i) {
+            if (a.string[i] != b.string[i]) return false;
+        }
+        if(a.string[i] !='\0' || b.string[i] !='\0') return false;
+        return true;
+    }
+
+    friend bool operator<=(const MyString &a, const MyString &b) {
+        return a == b || a < b;
+    }
+
+    friend bool operator!=(const MyString &a, const MyString &b) {
+        return !(a == b);
+    }
+
+    friend std::ostream &operator<<(std::ostream &os, const MyString &a) {
+        os << a.string;
+        return os; // TODO 在bpt。h里面写一部分的定义就会无法编译，说重复定义了函数
+    }
 };
 
 

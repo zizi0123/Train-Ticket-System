@@ -1,4 +1,3 @@
-#include <iostream>
 #include "bpt.h"
 
 template<class Key, class Val>
@@ -107,7 +106,7 @@ void bpt<Key, Val>::Insert(const Key &key, const Val &value) {
         if (new_data < leaf.contents[i]) break;
     }
     if (i >= 1 && leaf.contents[i - 1] == new_data) {
-        std::cout << "data existed!" << key << ' ' << value << '\n';
+//        std::cout << "data existed!" << key << ' ' << value << '\n';
         ClearBuffer();
         return;
     }
@@ -280,7 +279,7 @@ int bpt<Key, Val>::FindLeafBlock(const pair<Key, Val> &new_data) {  // 为Insert
     buffer.push(pack<Key, Val>(root, 0));
     while (true) {
         tree_block<Key, Val> current_block = buffer.top().block;
-        int i = 0; //i为目标tree_node在contents中的位置
+        int i; //i为目标tree_node在contents中的位置
         for (i = 0; i + 1 < current_block.num; ++i) { //找到合适的位置
             if (new_data < current_block.contents[i + 1].data) break;
         }
@@ -421,5 +420,5 @@ void bpt<Key, Val>::ClearBuffer() {
 //https://blog.csdn.net/mw_nice/article/details/102958242
 
 template
-class bpt<int, int>;
+class bpt<MyString, int>;
 // 注意，key 的类型不能是std::string.string = 动态分配的char数组指针+数组长度，把一个指针写入文件是无意义的。
