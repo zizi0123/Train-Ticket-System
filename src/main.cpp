@@ -1,4 +1,8 @@
-#include "bpt.h"
+#include "bpt/bpt.h"
+#include "user/user.h"
+#include "train/train.h"
+#include "order/order.h"
+#include "12306.h"
 
 int main() {
 //    freopen("../makedata/in","r",stdin);
