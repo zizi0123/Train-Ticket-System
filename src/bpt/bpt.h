@@ -6,6 +6,7 @@
 #include <fstream>
 #include <iostream>
 #include <cstring>
+#include "../utils/utils.h"
 
 const int M = 66, L = 71;
 //const int M = 4, L = 4;
@@ -84,56 +85,7 @@ struct leaf_block {
 
 };
 
-template<class A>
-class MyStack {
-private:
-    int num;
-    A stack[50];
-public:
-    MyStack();
 
-    void pop();
-
-    void push(const A &);
-
-    A &top();
-
-    int size();
-
-    bool empty();
-
-};
-
-template<class A>
-MyStack<A>::MyStack() {
-    num = 0;
-}
-
-template<class A>
-void MyStack<A>::pop() {
-    if(num>0) --num;
-}
-
-template<class A>
-void MyStack<A>::push(const A &a) {
-    stack[num] = a;
-    ++num;
-}
-
-template<class A>
-A &MyStack<A>::top() {
-    return stack[num-1];
-}
-
-template<class A>
-int MyStack<A>::size() {
-    return num;
-}
-
-template<class A>
-bool MyStack<A>::empty() {
-    return num == 0;
-}
 
 
 template<class Key, class Val>
@@ -175,68 +127,6 @@ public:
 
 };
 
-class MyString {
-public:
-
-    char string[50];
-
-    MyString() {
-        string[0] = '\0';
-    }
-
-    MyString(const MyString &other) {
-        int i = 0;
-        while (true) {
-            string[i] = other.string[i];
-            if (string[i] == '\0') break;
-            ++i;
-        }
-    }
-
-    MyString &operator=(const MyString &other) {
-        if (&other == this) return *this;
-        int i = 0;
-        while (true) {
-            string[i] = other.string[i];
-            if (string[i] == '\0') break;
-            ++i;
-        }
-        return *this;
-    }
-
-    friend bool operator<(const MyString &a, const MyString &b) {
-        int i;
-        for (i = 0; a.string[i] != '\0' && b.string[i] != '\0'; ++i) {
-            if (a.string[i] < b.string[i]) return true;
-            if (a.string[i] > b.string[i]) return false;
-
-        }
-        // 说明前一段都相等
-        return a.string[i] == '\0' && b.string[i] != '\0';
-    }
-
-    friend bool operator==(const MyString &a, const MyString &b) {
-        int i;
-        for (i = 0; a.string[i] != '\0' && b.string[i] != '\0'; ++i) {
-            if (a.string[i] != b.string[i]) return false;
-        }
-        if (a.string[i] != '\0' || b.string[i] != '\0') return false;
-        return true;
-    }
-
-    friend bool operator<=(const MyString &a, const MyString &b) {
-        return a == b || a < b;
-    }
-
-    friend bool operator!=(const MyString &a, const MyString &b) {
-        return !(a == b);
-    }
-
-    friend std::ostream &operator<<(std::ostream &os, const MyString &a) {
-        os << a.string;
-        return os; // TODO 在bpt.h里面写一部分的定义就会无法编译，说重复定义了函数
-    }
-};
 
 
 
