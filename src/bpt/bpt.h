@@ -122,7 +122,11 @@ public:
 
     void Erase(const Key &, const Val &);
 
-    void Find(const Key &);
+    std::vector<Val> Find(const Key &);
+
+    void Clean();
+
+    bool Empty();
 
 
 };

@@ -5,7 +5,12 @@
 #ifndef BPT_UTILS_H
 #define BPT_UTILS_H
 
-#include "iostream"
+#include <iostream>
+#include <fstream>
+#include "../user/user.h"
+#include "../train/train.h"
+#include "../order/order.h"
+#include <cstring>
 
 template<class A>
 class MyStack {
@@ -38,6 +43,10 @@ public:
 
     MyString(const MyString &other);
 
+    MyString(const std::string &other);
+
+    MyString(char a[]);
+
     MyString &operator=(const MyString &other);
 
     friend bool operator<(const MyString &a, const MyString &b);
@@ -54,22 +63,59 @@ public:
 
 class MyDate{
 private:
-    int month;
-    int day;
+    int month = 0;
+    int day = 0;
+public:
+    explicit MyDate (const std::string &str);
+
+    MyDate() = default;
 
     friend bool operator<(const MyDate &a, const MyDate &b);
-
-    friend bool operator>(const MyDate &a, const MyDate &b);
 
     friend bool operator==(const MyDate &a, const MyDate &b);
 
     friend bool operator<=(const MyDate &a, const MyDate &b);
 
-    friend bool operator>=(const MyDate &a, const MyDate &b);
-
     friend int operator-(const MyDate &a, const MyDate &b);
+};
 
+class MyTime{
+private:
+    int hour = 0;
+    int minute = 0;
+public:
+    explicit MyTime (const std::string &str);
 
+    MyTime() = default;
+
+    friend bool operator<(const MyTime &a, const MyTime &b);
+
+    friend bool operator==(const MyTime &a, const MyTime &b);
+
+    friend bool operator<=(const MyTime &a, const MyTime &b);
+
+    friend int operator-(const MyTime &a, const MyTime &b);
+};
+
+template<class T>
+class FilePointer{
+private:
+    std::fstream iof;
+    int num;  //文件中元素的个数
+public:
+    explicit FilePointer(const std::string &file_name);
+
+    ~FilePointer();
+
+    int Write(T& new_element); //在文件末尾写入一个新元素，并且返回此元素的位置
+
+    void Write(T& new_element,const int &pos); //在文件指定位置写入元素
+
+    void Read(T& element,const int &pos); //将位置pos处的元素读入element;
+
+    void Clean();
+
+    bool empty();
 };
 
 

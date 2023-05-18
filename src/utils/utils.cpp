@@ -7,7 +7,7 @@ MyStack<A>::MyStack() {
 
 template<class A>
 void MyStack<A>::pop() {
-    if(num>0) --num;
+    if (num > 0) --num;
 }
 
 template<class A>
@@ -18,7 +18,7 @@ void MyStack<A>::push(const A &a) {
 
 template<class A>
 A &MyStack<A>::top() {
-    return stack[num-1];
+    return stack[num - 1];
 }
 
 template<class A>
@@ -35,10 +35,24 @@ MyString::MyString() {
     string[0] = '\0';
 }
 
-MyString::MyString(const MyString &other)  {
+MyString::MyString(const MyString &other) {
     int i = 0;
     while (true) {
         string[i] = other.string[i];
+        if (string[i] == '\0') break;
+        ++i;
+    }
+}
+
+MyString::MyString(const std::string &other){
+    for(int i=0;i<other.size();++i) string[i] = other[i];
+    string[other.size()] = '\0';
+}
+
+MyString::MyString(char a[]) {
+    int i = 0;
+    while (true) {
+        string[i] = a[i];
         if (string[i] == '\0') break;
         ++i;
     }
@@ -55,7 +69,7 @@ MyString &MyString::operator=(const MyString &other) {
     return *this;
 }
 
-bool operator<(const MyString &a, const MyString &b)  {
+bool operator<(const MyString &a, const MyString &b) {
     int i;
     for (i = 0; a.string[i] != '\0' && b.string[i] != '\0'; ++i) {
         if (a.string[i] < b.string[i]) return true;
@@ -66,7 +80,7 @@ bool operator<(const MyString &a, const MyString &b)  {
     return a.string[i] == '\0' && b.string[i] != '\0';
 }
 
-bool operator==(const MyString &a, const MyString &b){
+bool operator==(const MyString &a, const MyString &b) {
     int i;
     for (i = 0; a.string[i] != '\0' && b.string[i] != '\0'; ++i) {
         if (a.string[i] != b.string[i]) return false;
@@ -87,3 +101,129 @@ std::ostream &operator<<(std::ostream &os, const MyString &a) {
     os << a.string;
     return os;
 }
+
+
+MyDate::MyDate(const std::string &str) {
+    month = (str[0] - '0') * 10 + str[1] - '0';
+    day = (str[3] - '0') * 10 + str[4] - '0';
+}
+
+bool operator<(const MyDate &a, const MyDate &b) {
+    if (a.month != b.month) return a.month < b.month;
+    return a.day < b.day;
+}
+
+bool operator==(const MyDate &a, const MyDate &b) {
+    return a.month == b.month && a.day == b.day;
+}
+
+bool operator<=(const MyDate &a, const MyDate &b) {
+    return a == b || a < b;
+}
+
+int operator-(const MyDate &a, const MyDate &b) {
+    const int day_of_months[13] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    if (a.month == b.month) return a.day - b.day;
+    int ans = 0;
+    for (int i = b.month + 1; i < a.month; ++i) {
+        ans += day_of_months[i];
+    }
+    ans += day_of_months[b.month] - b.day + 1;
+    ans += a.day;
+    return ans;
+}
+
+
+MyTime::MyTime(const std::string &str) {
+    hour = (str[0] - '0') * 10 + str[1] - '0';
+    minute = (str[3] - '0') * 10 + str[4] - '0';
+}
+
+bool operator<(const MyTime &a, const MyTime &b) {
+    if (a.hour != b.hour) return a.hour < b.hour;
+    return a.minute < b.minute;
+}
+
+bool operator==(const MyTime &a, const MyTime &b) {
+    return a.hour == b.hour && a.minute == b.minute;
+}
+
+bool operator<=(const MyTime &a, const MyTime &b) {
+    return a == b || a < b;
+}
+
+int operator-(const MyTime &a, const MyTime &b) {
+    if (a.hour == b.hour) return a.minute - b.minute;
+    int ans = 0;
+    if (a.hour - b.hour > 1) ans += (a.hour - b.hour - 1) * 60;
+    ans += a.minute;
+    ans += 60 - b.minute;
+    return ans;
+}
+
+template<class T>
+FilePointer<T>::FilePointer(const std::string &file_name) {
+    std::ifstream in1(file_name);
+    if (!in1) {  //如果没有打开成功，说明是初次使用系统，就创建这个文件
+        std::ofstream out(file_name);
+        out.close();
+        num = 0;
+        iof.open(file_name, std::fstream::in | std::fstream::out);
+        return;
+    } else {
+        in1.close();
+        iof.open(file_name, std::fstream::in | std::fstream::out);
+        iof.read(reinterpret_cast<char *>(&num), sizeof(int));
+    }
+}
+
+template<class T>
+FilePointer<T>::~FilePointer() {
+    iof.seekp(0);
+    iof.write(reinterpret_cast<char *>(&num), sizeof(int));
+    iof.close();
+}
+
+
+template<class T>
+int FilePointer<T>::Write(T &new_element) {
+    int pos = sizeof(int) + sizeof(T) * num;
+    ++num;
+    iof.seekp(pos);
+    iof.write(reinterpret_cast<char *>(&new_element), sizeof(T));
+    return pos;
+}
+
+template<class T>
+void FilePointer<T>::Write(T &new_element, const int &pos) {
+    iof.seekp(pos);
+    iof.write(reinterpret_cast<char *>(&new_element), sizeof(T));
+}
+
+template<class T>
+void FilePointer<T>::Read(T &element, const int &pos) {
+    iof.seekg(pos);
+    iof.read(reinterpret_cast<char *>(&element), sizeof(T));
+}
+
+template<class T>
+void FilePointer<T>::Clean() {
+    num = 0;
+}
+
+template<class T>
+bool FilePointer<T>::empty() {
+    return num == 0;
+}
+
+
+
+
+template
+class FilePointer<UserInfo>;
+
+template
+class FilePointer<TrainInfo>;
+
+template
+class FilePointer<OrderInfo>;

@@ -16,6 +16,8 @@ struct OrderInfo{
     char start[41];
     char end[41];
     bool queue;
+
+    OrderInfo();
 };
 
 struct WaitingInfo{
@@ -25,6 +27,8 @@ struct WaitingInfo{
     char start[41];
     char end[41];
     int order_pos;
+
+    WaitingInfo();
 };
 
 class Order{
@@ -32,11 +36,15 @@ private:
     bpt<MyString,int> orders; //(userID,pos of file9)
     std::queue<WaitingInfo> queue;
 public:
-    void BuyTicket(OrderInfo order_info);
+    Order();
 
-    void QueryOrder(char userID[]);
+    void BuyTicket(const OrderInfo &order_info);
 
-    void RefundTicket(char userID[],int num);
+    void QueryOrder(const std::string &ID);
+
+    void RefundTicket(const std::string &ID,const int &num);
+
+    void Clean();
 };
 
 #endif //BPT_ORDER_H

@@ -242,10 +242,10 @@ void bpt<Key, Val>::Erase(const Key &key, const Val &value) {
 }
 
 template<class Key, class Val>
-void bpt<Key, Val>::Find(const Key &key) {
+std::vector<Val> bpt<Key, Val>::Find(const Key &key) {
+    std::vector<Val> ans;
     if (root.num == 0) { //bpt为空
-        std::cout << "null\n";
-        return;
+        return ans;
     }
     int leaf_pos = FindLeafBlockFind(key);
     seq_iof.seekg(leaf_pos);
@@ -255,7 +255,7 @@ void bpt<Key, Val>::Find(const Key &key) {
     while (true) {
         for (int i = 0; i < block.num; ++i) {
             if (block.contents[i].key == key) {
-                std::cout << block.contents[i].value << ' ';
+                ans.push_back(block.contents[i].value);
                 if_find = true;
             }
         }
@@ -269,8 +269,7 @@ void bpt<Key, Val>::Find(const Key &key) {
             break;
         }
     }
-    if (!if_find) std::cout << "null";
-    std::cout << '\n';
+    return ans;
 }
 
 template<class Key, class Val>
@@ -414,6 +413,20 @@ template<class Key, class Val>
 void bpt<Key, Val>::ClearBuffer() {
     int size = buffer.size();
     for (int i = 1; i <= size; ++i) buffer.pop();
+}
+
+template<class Key, class Val>
+bool bpt<Key, Val>::Empty() {
+    return root.num == 0;
+}
+
+template<class Key, class Val>
+void bpt<Key, Val>::Clean() {
+    num_index = num_seq = 0;
+    root_pos = 2 * sizeof(int);
+    root.num = 0; // 完成树根初始化
+    root.if_bottom = true;
+    root.my_pos = root_pos;
 }
 
 
