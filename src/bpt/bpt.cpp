@@ -435,5 +435,8 @@ void bpt<Key, Val>::Clean() {
 //https://blog.csdn.net/mw_nice/article/details/102958242
 
 template
-class bpt<MyString, int>;
+        class bpt<MyString, int>;
+
+template
+class bpt<WaitingPair, int>;
 // 注意，key 的类型不能是std::string.string = 动态分配的char数组指针+数组长度，把一个指针写入文件是无意义的。

@@ -4,7 +4,6 @@
 #include "string"
 #include "iostream"
 #include "../user/user.h"
-#include "../order/order.h"
 #include "../train/train.h"
 #include "../utils/utils.h"
 
@@ -23,7 +22,7 @@ public:
     MyDate day;
     UserInfo user_info;
     ModifyInfo modify_info;
-    OrderInfo order_info;
+    BuyInfo buy_info;
     TrainInfo train_info;
     QueryTicketInfo query_ticket_info;
     int num = 0;

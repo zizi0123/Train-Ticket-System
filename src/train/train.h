@@ -5,10 +5,12 @@
 #ifndef BPT_TRAIN_H
 #define BPT_TRAIN_H
 
+#include <string>
+#include <algorithm>
+#include <vector>
+#include <queue>
 #include "../bpt/bpt.h"
 #include "../utils/utils.h"
-#include "algorithm"
-
 
 struct TrainInfo {
     char trainID[21];
@@ -51,7 +53,7 @@ struct TicketInfo{
     TicketInfo &operator = (const TicketInfo &other);
 };
 
-struct OrderInfo{
+struct BuyInfo{
     char userID[21];
     char trainID[21];
     MyDate date;
@@ -60,18 +62,38 @@ struct OrderInfo{
     char end[41];
     bool queue;
 
-    OrderInfo();
+    BuyInfo();
+};
+
+struct OrderInfo{
+    int status; //1:success 0:pending -1:refunded
+    char trainID[21];
+    char start[41];
+    char end[41];
+    MyTime start_t;
+    MyDate start_d;
+    MyTime end_t;
+    MyDaye end_d;
+    int price;
+    int num;
+    int day_num; //次订单购买的车次是第几天发的
+    int station_nums; //表示此订单共经过了多少个区间
+    int ticket_start_pos; //车票区间的开始地址
+
+    OrderInfo() = default;
+
+    OrderInfo(const int &s,const char ID[] ,const char start[],const char end[],const MyTime &s_t,const MyTime&e_t,const MyDate &,const MyDate &,const int &p,const int &n,const int &d,const int &st,const int &t);
 };
 
 struct WaitingInfo{
     char trainID[21];
-    MyDate date;
-    int num;
-    char start[41];
-    char end[41];
-    int order_pos;
+    int day_num; //火车发出的天数
+    int num; //票数
+    int start; //起始站编号
+    int end; //终点站编号
+    int order_pos; //完整订单信息的位置
 
-    WaitingInfo();
+    WaitingInfo(const char ID[],const int&,const int&,const int&,const int&,const int&);
 };
 
 bool CmpTime(const TicketInfo &a,const TicketInfo &b);
@@ -79,7 +101,22 @@ bool CmpTime(const TicketInfo &a,const TicketInfo &b);
 
 bool CmpCost(const TicketInfo &a,const TicketInfo &b);
 
+struct WaitingPair{
+    char trainID[41];
+    int day_num;
 
+    WaitingPair() = default;
+
+    WaitingPair(const char[],const int &);
+
+    friend bool operator<(const WaitingPair &a,const WaitingPair &b);
+
+    friend bool operator==(const WaitingPair &a,const WaitingPair &b);
+
+    friend bool operator!=(const WaitingPair &a,const WaitingPair &b);
+
+    friend bool operator<=(const WaitingPair &a,const WaitingPair &b);
+};
 
 
 //本类用于处理火车信息
@@ -89,10 +126,11 @@ private:
     bpt<MyString, int> released_trains;
     bpt<MyString,int> stations;
     bpt<MyString,int> station_pairs;
-    bpt<MyString,int> orders; //(userID,pos of file9)
+    bpt<MyString,int> orders; //(userID,pos of file18)
+    bpt<WaitingPair,int> queue;
     FilePointer<TrainInfo> train_io;
     FilePointer<int> ticket_io;
-    std::queue<WaitingInfo> queue;
+    FilePointer<OrderInfo> order_io;
 public:
     Train();
 
@@ -108,7 +146,7 @@ public:
 
     void QueryTransfer(QueryTicketInfo info);
 
-    void BuyTicket(const OrderInfo &order_info);
+    void BuyTicket(const BuyInfo &order_info);
 
     void QueryOrder(const std::string &ID);
 

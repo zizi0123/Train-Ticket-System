@@ -184,19 +184,19 @@ void Parser::Process() {
     } else if (command == "buy_ticket") {
         for (int i = 1; i < sections.size(); i += 2) {
             if (sections[i - 1] == "-u") {
-                strcpy(order_info.userID, sections[i].c_str());
+                strcpy(buy_info.userID, sections[i].c_str());
             } else if (sections[i - 1] == "-i") {
-                strcpy(order_info.trainID, sections[i].c_str());
+                strcpy(buy_info.trainID, sections[i].c_str());
             } else if (sections[i - 1] == "-d") {
-                order_info.date = MyDate(sections[i]);
+                buy_info.date = MyDate(sections[i]);
             } else if (sections[i - 1] == "-n") {
-                order_info.num = atoi(sections[i].c_str());
+                buy_info.num = atoi(sections[i].c_str());
             } else if (sections[i - 1] == "-f") {
-                strcpy(order_info.start, sections[i].c_str());
+                strcpy(buy_info.start, sections[i].c_str());
             } else if (sections[i - 1] == "-t") {
-                strcpy(order_info.end, sections[i].c_str());
+                strcpy(buy_info.end, sections[i].c_str());
             } else if (sections[i - 1] == "-q") {
-                order_info.queue = (sections[i] == "true");
+                buy_info.queue = (sections[i] == "true");
             }
         }
     } else if (command == "refund_ticket") {

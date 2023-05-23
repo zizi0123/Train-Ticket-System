@@ -7,6 +7,7 @@
 #include <iostream>
 #include <cstring>
 #include "../utils/utils.h"
+#include "../train/train.h"
 
 const int M = 66, L = 71;
 //const int M = 4, L = 4;

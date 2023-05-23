@@ -49,6 +49,10 @@ public:
 
     void Clean();
 
+    void Exit(); //所有上线用户均下线
+
+    int CheckLog(const std::string &userID);
+
 };
 
 #endif //BPT_USER_H

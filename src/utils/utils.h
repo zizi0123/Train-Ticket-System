@@ -73,7 +73,7 @@ public:
 
     MyDate &operator+=(const int & a);
 
-    MyDate operator+(const int & a);
+    MyDate operator+(const int & a) const;
 
     friend bool operator<(const MyDate &a, const MyDate &b);
 
@@ -125,7 +125,9 @@ public:
 
     int ContinuousWrite(T &ele,const int &n); //连续写入n次元素ele
 
-    void ContinuousRead(const int &n,const int &pos,int *p); //连续写入n次元素ele
+    void ContinuousWrite(const int &n,const int &pos,int *p); //连续n次从数组p中写入元素
+
+    void ContinuousRead(const int &n,const int &pos,int *p); //连续n次读入元素到数组p中
 
     void Write(T& new_element,const int &pos); //在文件指定位置写入元素
 

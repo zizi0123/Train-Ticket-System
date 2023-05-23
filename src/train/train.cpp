@@ -25,17 +25,62 @@ bool CmpTime(const TicketInfo &a, const TicketInfo &b) {
     return (strcmp(a.trainID, b.trainID) < 0);
 }
 
+WaitingPair::WaitingPair(const char ID[], const int &num) : day_num(num) {
+    strcpy(trainID, ID);
+}
+
 
 bool CmpCost(const TicketInfo &a, const TicketInfo &b) {
     if (a.price != b.price) return a.price < b.price;
     return (strcmp(a.trainID, b.trainID) < 0);
 }
 
+bool operator<(const WaitingPair &a, const WaitingPair &b) {
+    int q = strcmp(a.trainID, b.trainID);
+    if (q != 0) {
+        return q < 0;
+    }
+    return a.day_num < b.day_num;
+}
+
+bool operator==(const WaitingPair &a, const WaitingPair &b) {
+    return a.day_num == b.day_num && strcmp(a.trainID, b.trainID) == 0;
+}
+
+bool operator!=(const WaitingPair &a, const WaitingPair &b) {
+    return a.day_num != b.day_num || strcmp(a.trainID, b.trainID) != 0;
+}
+
+bool operator<=(const WaitingPair &a, const WaitingPair &b) {
+    return (a == b) || a < b;
+}
+
+
+OrderInfo::OrderInfo(const int &s, const char ID[], const char startt[], const char endd[], const MyTime &s_t,
+                     const MyTime &e_t, const MyDate &s_d, const MyDate &e_d, const int &p, const int &n, const int &d,
+                     const int &st, const int &t) : status(s),
+                                                    start_t(s_t),
+                                                    end_t(e_t),
+                                                    start_d(s_d),
+                                                    end_d(e_d),
+                                                    price(p),
+                                                    num(n), day_num(d), station_nums(st), ticket_start_pos(t) {
+    strcpy(trainID, ID);
+    strcpy(start, startt);
+    strcpy(end, endd);
+}
+
+WaitingInfo::WaitingInfo(const char ID[], const int &d, const int &n, const int &s, const int &e, const int &p)
+        : day_num(d), num(n), start(s), end(e), order_pos(p) {
+    strcpy(trainID, ID);
+}
+
 
 Train::Train() : all_trains("train_index", "train_seq"), released_trains("released_index", "released_seq"),
                  stations("station_index", "station_seq"), station_pairs("pair_index", "pair_seq"),
                  train_io("train_information"),
-                 ticket_io("ticket_information"), orders("order_index","order_seq"){}
+                 ticket_io("ticket_information"), orders("order_index", "order_seq"), order_io("order_information"),
+                 queue("queue_index", "queue_seq") {}
 
 int Train::AddTrain(TrainInfo new_train) {
     std::vector<int> a = all_trains.Find(new_train.trainID);
@@ -172,7 +217,7 @@ void Train::QueryTransfer(QueryTicketInfo info) {
     TicketInfo ticket1, ticket2;
     char transfer_station[41];
     std::vector<int> poses1 = stations.Find(info.start);
-    int price1, price2, seat1, seat2;
+    int price1, price2, seat1 = INT32_MAX, seat2 = INT32_MAX;
     for (auto &pos1: poses1) {
         TrainInfo train1;
         train_io.Read(train1, pos1);
@@ -247,16 +292,17 @@ void Train::QueryTransfer(QueryTicketInfo info) {
                     MyDate arrive_date = trans_date2 + (train2.day_diff_arr[end] - train2.day_diff_leav[trans2]);//下车日期
                     int price = price1 + price2;
                     int seat = seat1 < seat2 ? seat1 : seat2;
-                    int time = (arrive_date - info.date) * 1440 + (train2.arriving_time[end] - train1.leaving_time[start]);
+                    int time =
+                            (arrive_date - info.date) * 1440 + (train2.arriving_time[end] - train1.leaving_time[start]);
                     if ((info.time_first && time < best_val) || (!info.time_first && price < best_val)) {
                         ticket1 = TicketInfo(train1.trainID, info.date, train1.leaving_time[start], trans_date1,
                                              train1.arriving_time[trans1], price1, seat);
                         ticket2 = TicketInfo(train2.trainID, trans_date2, train2.leaving_time[trans2], arrive_date,
                                              train2.arriving_time[end], price2, seat);
-                        strcpy(transfer_station,train1.stations[trans1]);
-                        if(info.time_first) {
+                        strcpy(transfer_station, train1.stations[trans1]);
+                        if (info.time_first) {
                             best_val = time;
-                        }else{
+                        } else {
                             best_val = price;
                         }
                     }
@@ -264,9 +310,9 @@ void Train::QueryTransfer(QueryTicketInfo info) {
             }
         }
     }
-    if(best_val == INT32_MAX) {
-        std::cout<<0<<'\n';
-    }else{
+    if (best_val == INT32_MAX) {
+        std::cout << 0 << '\n';
+    } else {
         std::cout << ticket1.trainID << ' ' << info.start << ' ' << ticket1.start_date << ' '
                   << ticket1.start_time << " -> " << transfer_station << ' ' << ticket1.end_date << ' '
                   << ticket1.end_time << ' ' << ticket1.price << ' ' << ticket1.ava_ticket << '\n';
@@ -281,8 +327,134 @@ void Train::Clean() {
     released_trains.Clean();
     stations.Clean();
     station_pairs.Clean();
+    orders.Clean();
     train_io.Clean();
     ticket_io.Clean();
+    order_io.Clean();
+}
+
+void Train::BuyTicket(const BuyInfo &order_info) { //todo:要求user已登录！
+    std::vector<int> a = released_trains.Find(MyString(order_info.trainID));
+    if (a.empty()) {
+        std::cout << -1 << '\n';
+        return;
+    }
+    TrainInfo train;
+    train_io.Read(train, a[0]);
+    int start = -1, end = -1;
+    for (int i = 0; i < train.station_num; ++i) {
+        if (strcmp(train.stations[i], order_info.start) == 0) start = i;
+        if (strcmp(train.stations[i], order_info.end) == 0) end = i;
+    }
+    if (start == -1 || end == -1 || start >= end || order_info.num > train.seat_num) {
+        std::cout << -1 << '\n';
+        return;
+    }
+    int day_num = order_info.date - train.start_date - train.day_diff_leav[start];
+    if (day_num < 0 || day_num >= train.running_duration) {
+        std::cout << -1 << '\n';
+        return;
+    }
+    int price = 0;
+    for (int i = start; i < end; ++i) price += train.prices[i];
+    MyDate arrive_date = order_info.date + (train.day_diff_arr[end] - train.day_diff_leav[start]);
+    int ticket_nums[100], seat = train.seat_num;
+    int ticket_start_pos = train.ticket_pos + (day_num * (train.station_num - 1) + start) * sizeof(int);
+    ticket_io.ContinuousRead(end - start, ticket_start_pos, ticket_nums);
+    for (int k = 0; k < end - start; ++k) {
+        if (ticket_nums[k] < seat) seat = ticket_nums[k];
+    }
+    OrderInfo order(1, train.trainID, order_info.start, order_info.end, train.leaving_time[start],
+                    train.arriving_time[end], order_info.date, arrive_date, price, order_info.num, day_num,
+                    end - start, ticket_start_pos); //新订单信息（默认为购票成功）
+    if (seat >= order_info.num) { //购票成功
+        int pos = order_io.Write(order);
+        orders.Insert(MyString(order_info.userID), pos);
+        for (int k = 0; k < end - start; ++k) ticket_nums[k] -= order.num;
+        order_io.ContinuousWrite(end - start, ticket_start_pos, ticket_nums);
+    } else {
+        order.status = 0;
+        int pos = order_io.Write(order);
+        orders.Insert(MyString(order_info.userID), pos);
+        queue.Insert(WaitingPair(order_info.trainID, day_num), pos); //插入排队信息
+    }
+}
+
+void Train::QueryOrder(const std::string &ID) { //TODO：要求用户已经登录！
+    std::vector<int> poses = orders.Find(ID);
+    if (poses.empty()) {
+        std::cout << -1 << '\n';
+        return;
+    }
+    std::cout << poses.size() << '\n';
+    for (int &pos: poses) {
+        OrderInfo order;
+        order_io.Read(order, pos);
+        if (order.status == -1) {
+            std::cout << "[refunded] ";
+        } else if (order.status == 0) {
+            std::cout << "[pending] ";
+        } else {
+            std::cout << "[success] ";
+        }
+        std::cout << order.trainID << ' ' << order.start << ' ' << order.start_d << ' ' << order.start_t << " -> "
+                  << order.end << ' ' << order.end_d << ' ' << order.end_t << ' ' << order.price << ' ' << order.num
+                  << '\n';
+    }
+}
+
+void Train::RefundTicket(const std::string &ID, const int &num) {
+    std::vector<int> poses = orders.Find(ID);
+    if (poses.empty()) {
+        std::cout << -1 << '\n';
+        return;
+    }
+    OrderInfo order;
+    order_io.Read(order, poses[num - 1]);
+    if (order.status == -1) { //已退票！
+        std::cout << -1 << '\n';
+        return;
+    }
+    if (order.status == 0) {
+        queue.Erase(WaitingPair(order.trainID, order.day_num), poses[0]);
+        order.status = -1;
+        order_io.Write(order, poses[num - 1]); //写入订单信息
+        std::cout << 0 << '\n';
+        return;
+    }
+    // 正式退票
+    order.status == -1;
+    order_io.Write(order, poses[num - 1]); //写入订单信息
+    int *tickets = new int[order.station_nums];
+    ticket_io.ContinuousRead(order.station_nums, order.ticket_start_pos, tickets);
+    for (int i = 0; i < order.station_nums; ++i) tickets[i] += order.num;
+    ticket_io.ContinuousWrite(order.station_nums, order.ticket_start_pos, tickets); //补票
+    std::vector<int> pending_orders = queue.Find(WaitingPair(order.trainID, order.day_num));
+    if (pending_orders.empty()) {
+        std::cout << 0 << '\n';
+        return;
+    }
+    for (int pos: pending_orders) {
+        OrderInfo order;
+        order_io.Read(order,pos);
+        int *tickets = new int [order.station_nums] ;
+        ticket_io.ContinuousRead(order.station_nums,order.ticket_start_pos,tickets);
+        bool flag = true;
+        for(int i = 0;i<order.station_nums;++i) {
+            if(tickets[i]<order.num){
+                flag = false;
+                break;
+            }
+        }
+        if(!flag) continue;
+        //可以买到票了！
+        for(int i = 0;i<order.station_nums;++i) {
+            tickets[i] -= order.num;
+        }
+        ticket_io.ContinuousWrite(order.station_nums,order.ticket_start_pos,tickets);
+        order.status = 1;
+        order_io.Write(order,pos);
+    }
 }
 
 

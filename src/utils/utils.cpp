@@ -154,7 +154,7 @@ std::ostream &operator<<(std::ostream &os, const MyDate &date) {
     return os;
 }
 
-MyDate MyDate::operator+(const int &a) {
+MyDate MyDate::operator+(const int &a) const {
     MyDate ans = *this;
     const int day_of_months[13] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
     ans.day += a;
@@ -258,6 +258,12 @@ int FilePointer<T>::ContinuousWrite(T &ele, const int &n) {
 }
 
 template<class T>
+void FilePointer<T>::ContinuousWrite(const int &n, const int &pos, int *p) {
+    iof.seekp(pos);
+    for(int i = 0;i<n;++i) iof.write(reinterpret_cast<char *>(&(p[i])),sizeof(T));
+}
+
+template<class T>
 void FilePointer<T>::Read(T &element, const int &pos) {
     iof.seekg(pos);
     iof.read(reinterpret_cast<char *>(&element), sizeof(T));
@@ -279,6 +285,7 @@ bool FilePointer<T>::empty() {
     return num == 0;
 }
 
+
 template
 class FilePointer<UserInfo>;
 
@@ -286,4 +293,4 @@ template
 class FilePointer<TrainInfo>;
 
 template
-class FilePointer<OrderInfo>;
+class FilePointer<BuyInfo>;
