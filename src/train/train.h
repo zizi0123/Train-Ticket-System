@@ -51,11 +51,28 @@ struct TicketInfo{
     TicketInfo &operator = (const TicketInfo &other);
 };
 
-//struct QueryPair{
-//    int num;
-//    int price;
-//    int time;
-//};
+struct OrderInfo{
+    char userID[21];
+    char trainID[21];
+    MyDate date;
+    int num;
+    char start[41];
+    char end[41];
+    bool queue;
+
+    OrderInfo();
+};
+
+struct WaitingInfo{
+    char trainID[21];
+    MyDate date;
+    int num;
+    char start[41];
+    char end[41];
+    int order_pos;
+
+    WaitingInfo();
+};
 
 bool CmpTime(const TicketInfo &a,const TicketInfo &b);
 
@@ -67,13 +84,15 @@ bool CmpCost(const TicketInfo &a,const TicketInfo &b);
 
 //本类用于处理火车信息
 class Train {
+private:
     bpt<MyString, int> all_trains;
     bpt<MyString, int> released_trains;
     bpt<MyString,int> stations;
     bpt<MyString,int> station_pairs;
+    bpt<MyString,int> orders; //(userID,pos of file9)
     FilePointer<TrainInfo> train_io;
     FilePointer<int> ticket_io;
-
+    std::queue<WaitingInfo> queue;
 public:
     Train();
 
@@ -88,6 +107,12 @@ public:
     int QueryTicket(QueryTicketInfo info);
 
     void QueryTransfer(QueryTicketInfo info);
+
+    void BuyTicket(const OrderInfo &order_info);
+
+    void QueryOrder(const std::string &ID);
+
+    void RefundTicket(const std::string &ID,const int &num);
 
     void Clean();
 

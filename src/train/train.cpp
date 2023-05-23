@@ -35,7 +35,7 @@ bool CmpCost(const TicketInfo &a, const TicketInfo &b) {
 Train::Train() : all_trains("train_index", "train_seq"), released_trains("released_index", "released_seq"),
                  stations("station_index", "station_seq"), station_pairs("pair_index", "pair_seq"),
                  train_io("train_information"),
-                 ticket_io("ticket_information") {}
+                 ticket_io("ticket_information"), orders("order_index","order_seq"){}
 
 int Train::AddTrain(TrainInfo new_train) {
     std::vector<int> a = all_trains.Find(new_train.trainID);
@@ -274,6 +274,15 @@ void Train::QueryTransfer(QueryTicketInfo info) {
                   << ticket2.start_time << " -> " << info.end << ' ' << ticket2.end_date << ' '
                   << ticket2.end_time << ' ' << ticket2.price << ' ' << ticket2.ava_ticket << '\n';
     }
+}
+
+void Train::Clean() {
+    all_trains.Clean();
+    released_trains.Clean();
+    stations.Clean();
+    station_pairs.Clean();
+    train_io.Clean();
+    ticket_io.Clean();
 }
 
 
