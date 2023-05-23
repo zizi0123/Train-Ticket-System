@@ -44,8 +44,8 @@ MyString::MyString(const MyString &other) {
     }
 }
 
-MyString::MyString(const std::string &other){
-    for(int i=0;i<other.size();++i) string[i] = other[i];
+MyString::MyString(const std::string &other) {
+    for (int i = 0; i < other.size(); ++i) string[i] = other[i];
     string[other.size()] = '\0';
 }
 
@@ -108,6 +108,12 @@ MyDate::MyDate(const std::string &str) {
     day = (str[3] - '0') * 10 + str[4] - '0';
 }
 
+MyDate::MyDate(const MyDate &other) {
+    if (&other == this) return;
+    day = other.day;
+    month = other.month;
+}
+
 bool operator<(const MyDate &a, const MyDate &b) {
     if (a.month != b.month) return a.month < b.month;
     return a.day < b.day;
@@ -133,10 +139,51 @@ int operator-(const MyDate &a, const MyDate &b) {
     return ans;
 }
 
+MyDate &MyDate::operator+=(const int &a) {
+    const int day_of_months[13] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    day += a;
+    while (day > day_of_months[month]) {
+        day -= day_of_months[month];
+        ++month;
+    }
+    return *this;
+}
+
+std::ostream &operator<<(std::ostream &os, const MyDate &date) {
+    os << date.month << '-' << date.day;
+    return os;
+}
+
+MyDate MyDate::operator+(const int &a) {
+    MyDate ans = *this;
+    const int day_of_months[13] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    ans.day += a;
+    while (ans.day > day_of_months[month]) {
+        ans.day -= day_of_months[month];
+        ++ans.month;
+    }
+    return ans;
+}
+
 
 MyTime::MyTime(const std::string &str) {
     hour = (str[0] - '0') * 10 + str[1] - '0';
     minute = (str[3] - '0') * 10 + str[4] - '0';
+}
+
+MyTime::MyTime(const MyTime &other) {
+    if (&other == this) return;
+    hour = other.hour;
+    minute = other.minute;
+}
+
+MyTime &MyTime::operator+=(const int &a) {
+    minute += a;
+    if (minute > 60) {
+        hour += minute / 60;
+        minute = minute % 60;
+    }
+    return *this;
 }
 
 bool operator<(const MyTime &a, const MyTime &b) {
@@ -153,12 +200,13 @@ bool operator<=(const MyTime &a, const MyTime &b) {
 }
 
 int operator-(const MyTime &a, const MyTime &b) {
-    if (a.hour == b.hour) return a.minute - b.minute;
-    int ans = 0;
-    if (a.hour - b.hour > 1) ans += (a.hour - b.hour - 1) * 60;
-    ans += a.minute;
-    ans += 60 - b.minute;
+    int ans = (a.hour - b.hour) * 60 + a.minute - b.minute;
     return ans;
+}
+
+std::ostream &operator<<(std::ostream &os, const MyTime &time) {
+    os << time.hour << ':' << time.minute;
+    return os;
 }
 
 template<class T>
@@ -201,6 +249,15 @@ void FilePointer<T>::Write(T &new_element, const int &pos) {
 }
 
 template<class T>
+int FilePointer<T>::ContinuousWrite(T &ele, const int &n) {
+    int pos = sizeof(int) + sizeof(T) * num;
+    iof.seekp(pos);
+    for (int i = 1; i <= n; ++i) iof.write(reinterpret_cast<char *>(&ele), sizeof(T));
+    num += n;
+    return pos;
+}
+
+template<class T>
 void FilePointer<T>::Read(T &element, const int &pos) {
     iof.seekg(pos);
     iof.read(reinterpret_cast<char *>(&element), sizeof(T));
@@ -212,12 +269,15 @@ void FilePointer<T>::Clean() {
 }
 
 template<class T>
+void FilePointer<T>::ContinuousRead(const int &n, const int &pos, int *p) {
+    iof.seekg(pos);
+    for (int i = 0; i < n; ++i) iof.read(reinterpret_cast<char *>(&(p[i])), sizeof(T));
+}
+
+template<class T>
 bool FilePointer<T>::empty() {
     return num == 0;
 }
-
-
-
 
 template
 class FilePointer<UserInfo>;

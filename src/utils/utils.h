@@ -37,7 +37,7 @@ public:
 class MyString {
 public:
 
-    char string[50];
+    char string[81];
 
     MyString();
 
@@ -62,13 +62,19 @@ public:
 };
 
 class MyDate{
-private:
+public:
     int month = 0;
     int day = 0;
-public:
+
     explicit MyDate (const std::string &str);
 
+    MyDate(const MyDate &other);
+
     MyDate() = default;
+
+    MyDate &operator+=(const int & a);
+
+    MyDate operator+(const int & a);
 
     friend bool operator<(const MyDate &a, const MyDate &b);
 
@@ -77,16 +83,22 @@ public:
     friend bool operator<=(const MyDate &a, const MyDate &b);
 
     friend int operator-(const MyDate &a, const MyDate &b);
+
+    friend std::ostream & operator<<(std::ostream &,const MyDate &)
 };
 
 class MyTime{
-private:
+public:
     int hour = 0;
     int minute = 0;
-public:
+
     explicit MyTime (const std::string &str);
 
+    MyTime(const MyTime &other);
+
     MyTime() = default;
+
+    MyTime &operator+=(const int &a); //加上若干分钟
 
     friend bool operator<(const MyTime &a, const MyTime &b);
 
@@ -95,6 +107,9 @@ public:
     friend bool operator<=(const MyTime &a, const MyTime &b);
 
     friend int operator-(const MyTime &a, const MyTime &b);
+
+    friend std::ostream & operator<<(std::ostream &,const MyTime &)
+
 };
 
 template<class T>
@@ -108,6 +123,10 @@ public:
     ~FilePointer();
 
     int Write(T& new_element); //在文件末尾写入一个新元素，并且返回此元素的位置
+
+    int ContinuousWrite(T &ele,const int &n); //连续写入n次元素ele
+
+    void ContinuousRead(const int &n,const int &pos,int *p); //连续写入n次元素ele
 
     void Write(T& new_element,const int &pos); //在文件指定位置写入元素
 

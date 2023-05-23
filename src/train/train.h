@@ -6,18 +6,9 @@
 #define BPT_TRAIN_H
 
 #include "../bpt/bpt.h"
+#include "../utils/utils.h"
+#include "algorithm"
 
-struct StationPair{
-    char start[41];
-    char end[41];
-
-    friend bool operator<(const StationPair &a,const StationPair &b);
-
-    friend bool operator==(const StationPair &a,const StationPair &b);
-
-    friend bool operator<=(const StationPair &a,const StationPair &b);
-
-};
 
 struct TrainInfo {
     char trainID[21];
@@ -26,13 +17,16 @@ struct TrainInfo {
     int seat_num;
     int prices[100];
     MyTime start_time; //每班车的发车时间
-    int travel_times[100];
-    int stop_over_times[100];
+    MyTime arriving_time[100];
+    MyTime leaving_time[100];
+    int day_diff_arr[100];
+    int day_diff_leav[100];
     MyDate start_date; //开始售票的日期
     int running_duration; //总共开多少天
     char type;
+    int ticket_pos; // 票数信息开始储存的地址
 
-    TrainInfo();
+//    TrainInfo();
 };
 struct QueryTicketInfo{
     char start[41];
@@ -41,23 +35,57 @@ struct QueryTicketInfo{
     bool time_first;
 };
 
+struct TicketInfo{
+    char trainID[21];
+    MyDate start_date;
+    MyTime start_time;
+    MyDate end_date;
+    MyTime end_time;
+    int price;
+    int ava_ticket;
+
+    TicketInfo() = default; //默认构造函数必须放在下面有参数的构造函数上面
+
+    TicketInfo(char *,const MyDate &,const MyTime &,const MyDate &,const MyTime &,const int &,const int &);
+
+    TicketInfo &operator = (const TicketInfo &other);
+};
+
+//struct QueryPair{
+//    int num;
+//    int price;
+//    int time;
+//};
+
+bool CmpTime(const TicketInfo &a,const TicketInfo &b);
+
+
+bool CmpCost(const TicketInfo &a,const TicketInfo &b);
+
+
+
+
 //本类用于处理火车信息
 class Train {
     bpt<MyString, int> all_trains;
     bpt<MyString, int> released_trains;
-    bpt<StationPair,int> station_to_trains;
+    bpt<MyString,int> stations;
+    bpt<MyString,int> station_pairs;
+    FilePointer<TrainInfo> train_io;
+    FilePointer<int> ticket_io;
+
 public:
     Train();
 
-    void AddTrain(TrainInfo new_train);
+    int AddTrain(TrainInfo new_train);
 
-    void DeleteTrain(const std::string &ID);
+    int DeleteTrain(const std::string &ID);
 
-    void ReleaseTrain(const std::string &ID);
+    int ReleaseTrain(const std::string &ID);
 
-    void QueryTrain(MyDate date, const std::string &ID);
+    int QueryTrain(MyDate date, const std::string &ID);
 
-    void QueryTicket(QueryTicketInfo info);
+    int QueryTicket(QueryTicketInfo info);
 
     void QueryTransfer(QueryTicketInfo info);
 
