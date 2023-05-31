@@ -6,8 +6,9 @@
 #include <fstream>
 #include <iostream>
 #include <cstring>
+#include <vector>
 #include "../utils/utils.h"
-#include "../train/train.h"
+#include "../train/train_type.h"
 
 const int M = 66, L = 71;
 //const int M = 4, L = 4;
@@ -83,6 +84,25 @@ struct leaf_block {
     leaf_block() = default;
 
     leaf_block(const int &, const int &, const int &, const int &);
+};
+
+template<class A>
+class MyStack {
+private:
+    int num;
+    A stack[50];
+public:
+    MyStack();
+
+    void pop();
+
+    void push(const A &);
+
+    A &top();
+
+    int size();
+
+    bool empty();
 
 };
 

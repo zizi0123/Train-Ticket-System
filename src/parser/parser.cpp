@@ -17,13 +17,13 @@ void Parser::Process() {
         if (line[i] != ' ' && (line[i + 1] == ' ' || i == strlen(line) - 1)) {
             ++section_num;
             end = i;
-            std::string section(line + start, line + end);
+            std::string section(line + start, line + end + 1);
             if (section_num == 1) {
                 timestamp = section;
             } else if (section_num == 2) {
                 command = section;
             } else {
-                sections.push_back(section);
+                sections.push_back(section); //sections里会储存除了timestamp和command以外的参数信息
             }
         }
     }
@@ -152,12 +152,12 @@ void Parser::Process() {
             MyTime time = train_info.start_time;
             for (int k = 0; k < train_info.station_num; ++k) {
                 train_info.arriving_time[k] = time;
-                train_info.day_diff_arr[k] = time.hour/24;
+                train_info.day_diff_arr[k] = time.hour / 24;
                 train_info.arriving_time[k].hour %= 24;
                 if (k != 0 && k != train_info.station_num - 1) time += stop_over_times[k];
                 train_info.leaving_time[k] = time;
-                train_info.day_diff_leav[k] = time.hour/24;
-                train_info.leaving_time[k] %= 24;
+                train_info.day_diff_leav[k] = time.hour / 24;
+                train_info.leaving_time[k].hour %= 24;
                 if (k != train_info.station_num - 1) time += travel_times[k];
             }
         }

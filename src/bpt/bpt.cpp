@@ -37,6 +37,37 @@ tree_node<Key, Val>::tree_node(const pair<Key, Val> &_data, const int &pos) {
     son_pos = pos;
 }
 
+template<class A>
+MyStack<A>::MyStack() {
+    num = 0;
+}
+
+template<class A>
+void MyStack<A>::pop() {
+    if (num > 0) --num;
+}
+
+template<class A>
+void MyStack<A>::push(const A &a) {
+    stack[num] = a;
+    ++num;
+}
+
+template<class A>
+A &MyStack<A>::top() {
+    return stack[num - 1];
+}
+
+template<class A>
+int MyStack<A>::size() {
+    return num;
+}
+
+template<class A>
+bool MyStack<A>::empty() {
+    return num == 0;
+}
+
 template<class Key, class Val>
 bpt<Key, Val>::bpt(const char *Index_file, const char *Seq_file):index_file(Index_file),
                                                                  seq_file(Seq_file) {
@@ -434,9 +465,7 @@ void bpt<Key, Val>::Clean() {
 //对用到的类型进行实例化，以保证class bpt的实现被编译过了。 注意，只有当一个类模板被实例化以后，才会对这个类的实现进行编译。
 //https://blog.csdn.net/mw_nice/article/details/102958242
 
-template
-        class bpt<MyString, int>;
+template class bpt<MyString, int>;
 
-template
-class bpt<WaitingPair, int>;
+template class bpt<WaitingPair, int>;
 // 注意，key 的类型不能是std::string.string = 动态分配的char数组指针+数组长度，把一个指针写入文件是无意义的。

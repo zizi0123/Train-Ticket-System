@@ -1,107 +1,41 @@
 #include "train.h"
 
-TicketInfo::TicketInfo(char *ID, const MyDate &s_d, const MyTime &s_t, const MyDate &e_d,
-                       const MyTime &e_t, const int &p, const int &a) : start_date(s_d), end_date(e_d), start_time(s_t),
-                                                                        end_time(e_t), price(p), ava_ticket(a) {
-    strcpy(trainID, ID);
-}
+Train::Train() : all_trains("../files/train/train_index", "../files/train/train_seq"), released_trains("../files/release/released_index", "../files/release/released_seq"),
+                 stations("../files/station/station_index", "../files/station/station_seq"), station_pairs("../files/pair/pair_index", "../files/pair/pair_seq"),
+                 train_io("../files/train/train_information"),
+                 ticket_io("../files/ticket/ticket_information"), orders("../files/order/order_index", "../files/order/order_seq"), order_io("../files/order/order_information"),
+                 queue("../files/queue/queue_index", "../files/queue/queue_seq") {}
 
-TicketInfo &TicketInfo::operator=(const TicketInfo &other) {
-    if (&other == this) return *this;
-    strcpy(trainID, other.trainID);
-    start_date = other.start_date;
-    end_date = other.end_date;
-    start_time = other.start_time;
-    end_time = other.end_time;
-    price = other.price;
-    ava_ticket = other.ava_ticket;
-}
-
-bool CmpTime(const TicketInfo &a, const TicketInfo &b) {
-    int x, y;
-    x = (a.end_date - a.start_date) * 1440 + (a.end_time - a.start_time);
-    y = (b.end_date - b.start_date) * 1440 + (b.end_time - b.start_time);
-    if (x != y) return x < y;
-    return (strcmp(a.trainID, b.trainID) < 0);
-}
-
-WaitingPair::WaitingPair(const char ID[], const int &num) : day_num(num) {
-    strcpy(trainID, ID);
-}
-
-
-bool CmpCost(const TicketInfo &a, const TicketInfo &b) {
-    if (a.price != b.price) return a.price < b.price;
-    return (strcmp(a.trainID, b.trainID) < 0);
-}
-
-bool operator<(const WaitingPair &a, const WaitingPair &b) {
-    int q = strcmp(a.trainID, b.trainID);
-    if (q != 0) {
-        return q < 0;
-    }
-    return a.day_num < b.day_num;
-}
-
-bool operator==(const WaitingPair &a, const WaitingPair &b) {
-    return a.day_num == b.day_num && strcmp(a.trainID, b.trainID) == 0;
-}
-
-bool operator!=(const WaitingPair &a, const WaitingPair &b) {
-    return a.day_num != b.day_num || strcmp(a.trainID, b.trainID) != 0;
-}
-
-bool operator<=(const WaitingPair &a, const WaitingPair &b) {
-    return (a == b) || a < b;
-}
-
-
-OrderInfo::OrderInfo(const int &s, const char ID[], const char startt[], const char endd[], const MyTime &s_t,
-                     const MyTime &e_t, const MyDate &s_d, const MyDate &e_d, const int &p, const int &n, const int &d,
-                     const int &st, const int &t) : status(s),
-                                                    start_t(s_t),
-                                                    end_t(e_t),
-                                                    start_d(s_d),
-                                                    end_d(e_d),
-                                                    price(p),
-                                                    num(n), day_num(d), station_nums(st), ticket_start_pos(t) {
-    strcpy(trainID, ID);
-    strcpy(start, startt);
-    strcpy(end, endd);
-}
-
-WaitingInfo::WaitingInfo(const char ID[], const int &d, const int &n, const int &s, const int &e, const int &p)
-        : day_num(d), num(n), start(s), end(e), order_pos(p) {
-    strcpy(trainID, ID);
-}
-
-
-Train::Train() : all_trains("train_index", "train_seq"), released_trains("released_index", "released_seq"),
-                 stations("station_index", "station_seq"), station_pairs("pair_index", "pair_seq"),
-                 train_io("train_information"),
-                 ticket_io("ticket_information"), orders("order_index", "order_seq"), order_io("order_information"),
-                 queue("queue_index", "queue_seq") {}
-
-int Train::AddTrain(TrainInfo new_train) {
+void Train::AddTrain(TrainInfo new_train) {
     std::vector<int> a = all_trains.Find(new_train.trainID);
-    if (!a.empty()) return -1;
+    if (!a.empty()) {
+        std::cout<<-1<<'\n';
+        return ;
+    }
     int pos = train_io.Write(new_train);
     all_trains.Insert(new_train.trainID, pos);
-    return 0;
+    std::cout<<0<<'\n';
+    return ;
 }
 
-int Train::DeleteTrain(const std::string &ID) {
+void Train::DeleteTrain(const std::string &ID) {
     std::vector<int> a1 = all_trains.Find(ID);
     std::vector<int> a2 = released_trains.Find(ID);
-    if (a1.empty() || !a2.empty()) return -1;
+    if (a1.empty() || !a2.empty()) {
+        std::cout<<-1<<'\n';
+        return ;
+    }
     all_trains.Erase(ID, a1[0]);
-    return 0;
+    std::cout<<0<<'\n';
 }
 
-int Train::ReleaseTrain(const std::string &ID) {
+void Train::ReleaseTrain(const std::string &ID) {
     std::vector<int> a1 = all_trains.Find(ID);
     std::vector<int> a2 = released_trains.Find(ID);
-    if (a1.empty() || !a2.empty()) return -1;
+    if (a1.empty() || !a2.empty()) {
+        std::cout<<-1<<'\n';
+        return ;
+    }
     TrainInfo train_info;
     train_io.Read(train_info, a1[0]);
     train_info.ticket_pos = ticket_io.ContinuousWrite(train_info.seat_num, train_info.running_duration *
@@ -117,12 +51,15 @@ int Train::ReleaseTrain(const std::string &ID) {
         }
     }
     released_trains.Insert(ID, a1[0]);
-    return 0;
+    std::cout<<0<<'\n';
 }
 
-int Train::QueryTrain(MyDate date, const std::string &ID) {
+void Train::QueryTrain(MyDate date, const std::string &ID) {
     std::vector<int> a1 = all_trains.Find(ID);
-    if (a1.empty()) return -1;
+    if (a1.empty()) {
+        std::cout<<-1<<'\n';
+        return;
+    }
     TrainInfo train_info;
     train_io.Read(train_info, a1[0]);
     std::cout << ID << ' ' << train_info.type << '\n';
@@ -156,12 +93,15 @@ int Train::QueryTrain(MyDate date, const std::string &ID) {
     delete[]ticket_nums;
 }
 
-int Train::QueryTicket(QueryTicketInfo info) {
+void Train::QueryTicket(QueryTicketInfo info) {
     char a[81];
     strcpy(a, info.start);
     strcpy(a + strlen(a), info.end);
     std::vector<int> poses = station_pairs.Find(a);
-    if (poses.empty()) return -1;
+    if (poses.empty()){
+        std::cout<<-1<<'\n';
+        return;
+    }
     int total_num = 0;//符合要求的车次总数
     TicketInfo *tickets = new TicketInfo[poses.size()];
     for (int pos: poses) { //对于每一班经过这两站的车次：

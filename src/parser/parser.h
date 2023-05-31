@@ -1,10 +1,11 @@
 #ifndef BPT_PARSER_H
 #define BPT_PARSER_H
 
-#include "string"
-#include "iostream"
-#include "../user/user.h"
-#include "../train/train.h"
+#include <string>
+#include <iostream>
+#include <vector>
+#include "../user/user_type.h"
+#include "../train/train_type.h"
 #include "../utils/utils.h"
 
 class MyDate;

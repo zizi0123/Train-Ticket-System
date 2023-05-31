@@ -4,11 +4,14 @@
 #include "parser/parser.h"
 
 int main() {
+    freopen("../Ticket 2023 下发数据/basic_1/1.in","r",stdin);
+    freopen("outt","w",stdout);
     User user_system;
     Train train_system;
     Parser parser;
     while(parser.GetNewLine()){
-        std::cout<<parser.timestamp;
+        parser.Process();
+        std::cout<<parser.timestamp<<' ';
         if(parser.command == "add_user"){
             user_system.AddUser(parser.current_ID,parser.user_info);
         }else if (parser.command == "login"){
@@ -53,7 +56,7 @@ int main() {
             user_system.Clean();
             train_system.Clean();
         }else if(parser.command == "exit"){
-            exit(0);
+            user_system.Exit();
         }
     }
 }
