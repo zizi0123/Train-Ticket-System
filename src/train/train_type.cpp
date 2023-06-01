@@ -25,8 +25,8 @@ WaitingInfo::WaitingInfo(const char ID[], const int &d, const int &n, const int 
 
 bool CmpTime(const TicketInfo &a, const TicketInfo &b) {
     int x, y;
-    x = (a.end_date - a.start_date) * 1440 + (a.end_time - a.start_time);
-    y = (b.end_date - b.start_date) * 1440 + (b.end_time - b.start_time);
+    x = (a.end_date - a.start_date - 1) * 1440 + (a.end_time - a.start_time);
+    y = (b.end_date - b.start_date - 1) * 1440 + (b.end_time - b.start_time);
     if (x != y) return x < y;
     return (strcmp(a.trainID, b.trainID) < 0);
 }
@@ -63,8 +63,10 @@ bool operator<=(const WaitingPair &a, const WaitingPair &b) {
 
 OrderInfo::OrderInfo(const int &s, const char *ID, const char *startt, const char *endd, const MyTime &s_t,
                      const MyTime &e_t, const MyDate &s_d, const MyDate &e_d, const int &p, const int &n, const int &d,
-                     const int &st, const int &t) :status(s),start_t(s_t),start_d(s_d),end_t(e_t),end_d(e_d),price(p),num(n),day_num(d),station_nums(st),ticket_start_pos(t){
-    strcpy(trainID,ID);
-    strcpy(start,startt);
-    strcpy(end,endd);
+                     const int &st, const int &t) : status(s), start_t(s_t), start_d(s_d), end_t(e_t), end_d(e_d),
+                                                    price(p), num(n), day_num(d), station_nums(st),
+                                                    ticket_start_pos(t) {
+    strcpy(trainID, ID);
+    strcpy(start, startt);
+    strcpy(end, endd);
 }

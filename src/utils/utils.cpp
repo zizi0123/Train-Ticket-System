@@ -1,7 +1,6 @@
 #include "utils.h"
 
 
-
 MyString::MyString() {
     string[0] = '\0';
 }
@@ -98,9 +97,9 @@ bool operator<=(const MyDate &a, const MyDate &b) {
     return a == b || a < b;
 }
 
-int operator-(const MyDate &a, const MyDate &b) {
+int operator-(const MyDate &a, const MyDate &b) { //调用此函数时保证a>=b
     const int day_of_months[13] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-    if (a.month == b.month) return a.day - b.day;
+    if (a.month == b.month) return a.day - b.day + 1;
     int ans = 0;
     for (int i = b.month + 1; i < a.month; ++i) {
         ans += day_of_months[i];
@@ -121,7 +120,10 @@ MyDate &MyDate::operator+=(const int &a) {
 }
 
 std::ostream &operator<<(std::ostream &os, const MyDate &date) {
-    os << date.month << '-' << date.day;
+    if (date.month < 10) os << '0';
+    os << date.month << '-';
+    if (date.day < 10) os << '0';
+    os << date.day;
     return os;
 }
 
@@ -150,7 +152,7 @@ MyTime::MyTime(const MyTime &other) {
 
 MyTime &MyTime::operator+=(const int &a) {
     minute += a;
-    if (minute > 60) {
+    if (minute >= 60) {
         hour += minute / 60;
         minute = minute % 60;
     }
@@ -176,7 +178,10 @@ int operator-(const MyTime &a, const MyTime &b) {
 }
 
 std::ostream &operator<<(std::ostream &os, const MyTime &time) {
-    os << time.hour << ':' << time.minute;
+    if (time.hour < 10) os << '0';
+    os << time.hour << ':';
+    if (time.minute < 10) os << '0';
+    os << time.minute;
     return os;
 }
 

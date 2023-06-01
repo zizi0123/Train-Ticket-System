@@ -83,10 +83,10 @@ void Parser::Process() {
             }
         }
     } else if (command == "add_train") {
-        int stop_over_times[100], travel_times[100];
+        int stop_over_times[100], travel_times[100]; //travel_times[k]:从第k站开到第k+1站所需要的时间；stop_over_times[k]：在第k站停留的时间
         for (int i = 1; i < sections.size(); i += 2) {
             if (sections[i - 1] == "-i") {
-                strcpy(train_info.trainID, sections[i - 1].c_str());
+                strcpy(train_info.trainID, sections[i].c_str());
             } else if (sections[i - 1] == "-n") {
                 train_info.station_num = atoi(sections[i].c_str());
             } else if (sections[i - 1] == "-m") {
@@ -108,9 +108,8 @@ void Parser::Process() {
                     if (j == sections[i].size() - 1 || sections[i][j + 1] == '|') {
                         strncpy(a, sections[i].c_str() + startt, j - startt + 1);
                         a[j - startt + 1] = '\0';
-                        train_info.prices[k] = atoi(a);
+                        train_info.prices[k++] = atoi(a);
                         startt = j + 2;
-                        ++k;
                     }
                 }
             } else if (sections[i - 1] == "-x") {
@@ -122,22 +121,20 @@ void Parser::Process() {
                     if (j == sections[i].size() - 1 || sections[i][j + 1] == '|') {
                         strncpy(a, sections[i].c_str() + startt, j - startt + 1);
                         a[j - startt + 1] = '\0';
-                        travel_times[k] = atoi(a);
+                        travel_times[k++] = atoi(a);
                         startt = j + 2;
-                        ++k;
                     }
                 }
             } else if (sections[i - 1] == "-o") {
-                if (train_info.station_num > 2) { //此时才有中间站
+                if (sections[i] != "_") { //此时才有中间站
                     int k = 1, startt = 0; //注意：从1开始。即第二站的停顿时长为stop_over_time[1]
                     char a[10];
                     for (int j = 0; j < sections[i].size(); ++j) {
                         if (j == sections[i].size() - 1 || sections[i][j + 1] == '|') {
                             strncpy(a, sections[i].c_str() + startt, j - startt + 1);
                             a[j - startt + 1] = '\0';
-                            stop_over_times[k] = atoi(a);
+                            stop_over_times[k++] = atoi(a);
                             startt = j + 2;
-                            ++k;
                         }
                     }
                 }
@@ -145,21 +142,21 @@ void Parser::Process() {
                 std::string a(sections[i], 0, 5);
                 std::string b(sections[i], 6, 5);
                 train_info.start_date = MyDate(a);
-                train_info.running_duration = MyDate(b) - train_info.start_date + 1;
+                train_info.running_duration = MyDate(b) - train_info.start_date;
             } else if (sections[i - 1] == "-y") {
                 train_info.type = sections[i][0];
             }
-            MyTime time = train_info.start_time;
-            for (int k = 0; k < train_info.station_num; ++k) {
-                train_info.arriving_time[k] = time;
-                train_info.day_diff_arr[k] = time.hour / 24;
-                train_info.arriving_time[k].hour %= 24;
-                if (k != 0 && k != train_info.station_num - 1) time += stop_over_times[k];
-                train_info.leaving_time[k] = time;
-                train_info.day_diff_leav[k] = time.hour / 24;
-                train_info.leaving_time[k].hour %= 24;
-                if (k != train_info.station_num - 1) time += travel_times[k];
-            }
+        }
+        MyTime time = train_info.start_time;
+        for (int k = 0; k < train_info.station_num; ++k) {
+            train_info.arriving_time[k] = time;
+            train_info.day_diff_arr[k] = time.hour / 24;
+            train_info.arriving_time[k].hour %= 24;
+            if (k != 0 && k != train_info.station_num - 1) time += stop_over_times[k];
+            train_info.leaving_time[k] = time;
+            train_info.day_diff_leav[k] = time.hour / 24;
+            train_info.leaving_time[k].hour %= 24;
+            if (k != train_info.station_num - 1) time += travel_times[k];
         }
     } else if (command == "query_train") {
         for (int i = 1; i < 4; i += 2) {
@@ -203,7 +200,7 @@ void Parser::Process() {
         for (int i = 1; i < sections.size(); i += 2) {
             if (sections[i - 1] == "-u") {
                 ID = sections[i];
-            } else if (sections[i - 1] == "-i") {
+            } else if (sections[i - 1] == "-n") {
                 num = atoi(sections[i].c_str());
             }
         }

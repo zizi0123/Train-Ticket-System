@@ -69,7 +69,7 @@ struct OrderInfo {
     MyDate start_d;
     MyTime end_t;
     MyDate end_d;
-    int price;
+    int price; //单价
     int num;
     int day_num; //次订单购买的车次是第几天发的
     int station_nums; //表示此订单共经过了多少个区间

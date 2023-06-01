@@ -35,7 +35,7 @@ public:
 
     void ReleaseTrain(const std::string &ID);
 
-    void QueryTrain(MyDate date, const std::string &ID);
+    void QueryTrain(const MyDate &date, const std::string &ID);
 
     void QueryTicket(QueryTicketInfo info);
 

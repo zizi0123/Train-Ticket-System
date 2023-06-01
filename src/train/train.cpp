@@ -1,46 +1,50 @@
 #include "train.h"
 
-Train::Train() : all_trains("../files/train/train_index", "../files/train/train_seq"), released_trains("../files/release/released_index", "../files/release/released_seq"),
-                 stations("../files/station/station_index", "../files/station/station_seq"), station_pairs("../files/pair/pair_index", "../files/pair/pair_seq"),
+Train::Train() : all_trains("../files/train/train_index", "../files/train/train_seq"),
+                 released_trains("../files/release/released_index", "../files/release/released_seq"),
+                 stations("../files/station/station_index", "../files/station/station_seq"),
+                 station_pairs("../files/pair/pair_index", "../files/pair/pair_seq"),
                  train_io("../files/train/train_information"),
-                 ticket_io("../files/ticket/ticket_information"), orders("../files/order/order_index", "../files/order/order_seq"), order_io("../files/order/order_information"),
+                 ticket_io("../files/ticket/ticket_information"),
+                 orders("../files/order/order_index", "../files/order/order_seq"),
+                 order_io("../files/order/order_information"),
                  queue("../files/queue/queue_index", "../files/queue/queue_seq") {}
 
 void Train::AddTrain(TrainInfo new_train) {
     std::vector<int> a = all_trains.Find(new_train.trainID);
     if (!a.empty()) {
-        std::cout<<-1<<'\n';
-        return ;
+        std::cout << -1 << '\n';
+        return;
     }
     int pos = train_io.Write(new_train);
     all_trains.Insert(new_train.trainID, pos);
-    std::cout<<0<<'\n';
-    return ;
+    std::cout << 0 << '\n';
 }
 
 void Train::DeleteTrain(const std::string &ID) {
     std::vector<int> a1 = all_trains.Find(ID);
     std::vector<int> a2 = released_trains.Find(ID);
     if (a1.empty() || !a2.empty()) {
-        std::cout<<-1<<'\n';
-        return ;
+        std::cout << -1 << '\n';
+        return;
     }
     all_trains.Erase(ID, a1[0]);
-    std::cout<<0<<'\n';
+    std::cout << 0 << '\n';
 }
 
-void Train::ReleaseTrain(const std::string &ID) {
+void Train::ReleaseTrain(const std::string &ID) { //只有在release后，才在bpt中写入了station->pos信息、station_pair->pos信息、车票数量的一连串信息。
     std::vector<int> a1 = all_trains.Find(ID);
     std::vector<int> a2 = released_trains.Find(ID);
     if (a1.empty() || !a2.empty()) {
-        std::cout<<-1<<'\n';
-        return ;
+        std::cout << -1 << '\n';
+        return;
     }
     TrainInfo train_info;
     train_io.Read(train_info, a1[0]);
     train_info.ticket_pos = ticket_io.ContinuousWrite(train_info.seat_num, train_info.running_duration *
                                                                            (train_info.station_num -
                                                                             1)); //写入车票信息，此时全为满票
+    train_io.Write(train_info, a1[0]); //更新了车票起始位置信息后要重新写入
     for (int i = 0; i < train_info.station_num; ++i) {
         stations.Insert(train_info.stations[i], a1[0]); //插入station->pos
         for (int j = i + 1; j < train_info.station_num; ++j) { //station_pair : station1_station2 表示在1,2两站之间有一班列车
@@ -51,23 +55,35 @@ void Train::ReleaseTrain(const std::string &ID) {
         }
     }
     released_trains.Insert(ID, a1[0]);
-    std::cout<<0<<'\n';
+    std::cout << 0 << '\n';
 }
 
-void Train::QueryTrain(MyDate date, const std::string &ID) {
+void Train::QueryTrain(const MyDate &date,
+                       const std::string &ID) { //released的车次和未被released的车次都可以被查到。注意,要求date必须在该车的发车区间内，否则失败。
     std::vector<int> a1 = all_trains.Find(ID);
     if (a1.empty()) {
-        std::cout<<-1<<'\n';
+        std::cout << -1 << '\n';
         return;
     }
+    std::vector<int> a2 = released_trains.Find(ID);
     TrainInfo train_info;
     train_io.Read(train_info, a1[0]);
+    if (date < train_info.start_date) {
+        std::cout << -1 << '\n';
+        return;
+    }
+    int day_num = date - train_info.start_date - 1;
+    if (day_num >= train_info.running_duration) {
+        std::cout << -1 << '\n';
+        return;
+    }
     std::cout << ID << ' ' << train_info.type << '\n';
     int price = 0;
-    int count = date - train_info.start_date;
     int *ticket_nums = new int[train_info.station_num - 1];
-    int ticket_start_pos = train_info.ticket_pos + count * (train_info.station_num - 1) * sizeof(int);
-    ticket_io.ContinuousRead(train_info.station_num - 1, ticket_start_pos, ticket_nums);
+    if (!a2.empty()) {
+        int ticket_start_pos = train_info.ticket_pos + day_num * (train_info.station_num - 1) * sizeof(int);
+        ticket_io.ContinuousRead(train_info.station_num - 1, ticket_start_pos, ticket_nums);
+    }
     for (int i = 0; i < train_info.station_num; ++i) {
         std::cout << train_info.stations[i] << ' ';
         // 到达时间输出
@@ -85,7 +101,11 @@ void Train::QueryTrain(MyDate date, const std::string &ID) {
         std::cout << price << ' ';
         if (i != train_info.station_num - 1) price += train_info.prices[i];
         if (i != train_info.station_num - 1) {
-            std::cout << ticket_nums[i] << '\n';
+            if (!a2.empty()) {
+                std::cout << ticket_nums[i] << '\n';
+            } else {
+                std::cout << train_info.seat_num << '\n';
+            }
         } else {
             std::cout << 'x' << '\n';
         }
@@ -93,13 +113,13 @@ void Train::QueryTrain(MyDate date, const std::string &ID) {
     delete[]ticket_nums;
 }
 
-void Train::QueryTicket(QueryTicketInfo info) {
+void Train::QueryTicket(QueryTicketInfo info) { //只能查到已经release的车次
     char a[81];
     strcpy(a, info.start);
     strcpy(a + strlen(a), info.end);
     std::vector<int> poses = station_pairs.Find(a);
-    if (poses.empty()){
-        std::cout<<-1<<'\n';
+    if (poses.empty()) {
+        std::cout << -1 << '\n';
         return;
     }
     int total_num = 0;//符合要求的车次总数
@@ -113,12 +133,13 @@ void Train::QueryTicket(QueryTicketInfo info) {
                 break;
             }
         }
-        int day_num = info.date - train_info.start_date - train_info.day_diff_leav[start];
+        if (info.date < train_info.start_date) continue;
+        int day_num = info.date - train_info.start_date - train_info.day_diff_leav[start] - 1; //因为这是日期的编号，所以要-1
         if (day_num >= 0 && day_num < train_info.running_duration) { //说明此车次符合条件
             int price = train_info.prices[start];
             int ava_seat = train_info.seat_num;
             for (end = start + 1; end < train_info.station_num; ++end) {
-                if (!strcmp(train_info.stations[end], info.end)) {
+                if (strcmp(train_info.stations[end], info.end) != 0) {
                     price += train_info.prices[end];
                 } else {
                     break;
@@ -132,7 +153,7 @@ void Train::QueryTicket(QueryTicketInfo info) {
                 if (ticket_nums[k] < ava_seat) ava_seat = ticket_nums[k];
             }
             delete[] ticket_nums;
-            MyDate e_d = info.date + (train_info.arriving_time[end] - train_info.leaving_time[start]);
+            MyDate e_d = info.date + (train_info.day_diff_arr[end] - train_info.day_diff_leav[start]);
             tickets[total_num] = TicketInfo(train_info.trainID, info.date, train_info.leaving_time[start], e_d,
                                             train_info.arriving_time[end], price, ava_seat);
             ++total_num;
@@ -165,7 +186,8 @@ void Train::QueryTransfer(QueryTicketInfo info) {
         for (; start < train1.station_num; ++start) {
             if (strcmp(train1.stations[start], info.start) == 0) break;
         }
-        int day_num1 = info.date - train1.start_date - train1.day_diff_leav[start];
+        if (info.date < train1.start_date) continue;
+        int day_num1 = info.date - train1.start_date - train1.day_diff_leav[start] - 1;
         if (day_num1 < 0 || day_num1 >= train1.running_duration || start == train1.station_num - 1) continue;
         price1 = 0;
         for (trans1 = start + 1; trans1 < train1.station_num - 1; ++trans1) { //尝试以start后的每一站作为中转站
@@ -216,10 +238,10 @@ void Train::QueryTransfer(QueryTicketInfo info) {
                         trans_date2 = train2.start_date + train2.day_diff_leav[trans2];
                     } else {
                         if (train1.arriving_time[trans1] <= train2.leaving_time[trans2]) { //买同一天的即可
-                            day_num2 = trans_date1 - train2.start_date;
+                            day_num2 = trans_date1 - train2.start_date - 1;
                             trans_date2 = trans_date1;
                         } else { //得买后一天的
-                            day_num2 = trans_date1 - train2.start_date + 1;
+                            day_num2 = trans_date1 - train2.start_date - 1;
                             trans_date2 = trans_date1 + 1;
                         }
                     }
@@ -233,7 +255,7 @@ void Train::QueryTransfer(QueryTicketInfo info) {
                     int price = price1 + price2;
                     int seat = seat1 < seat2 ? seat1 : seat2;
                     int time =
-                            (arrive_date - info.date) * 1440 + (train2.arriving_time[end] - train1.leaving_time[start]);
+                            (arrive_date - info.date - 1 ) * 1440 + (train2.arriving_time[end] - train1.leaving_time[start]);
                     if ((info.time_first && time < best_val) || (!info.time_first && price < best_val)) {
                         ticket1 = TicketInfo(train1.trainID, info.date, train1.leaving_time[start], trans_date1,
                                              train1.arriving_time[trans1], price1, seat);
@@ -273,7 +295,7 @@ void Train::Clean() {
     order_io.Clean();
 }
 
-void Train::BuyTicket(const BuyInfo &order_info) { //todo:要求user已登录！
+void Train::BuyTicket(const BuyInfo &order_info) {
     std::vector<int> a = released_trains.Find(MyString(order_info.trainID));
     if (a.empty()) {
         std::cout << -1 << '\n';
@@ -290,7 +312,7 @@ void Train::BuyTicket(const BuyInfo &order_info) { //todo:要求user已登录！
         std::cout << -1 << '\n';
         return;
     }
-    int day_num = order_info.date - train.start_date - train.day_diff_leav[start];
+    int day_num = order_info.date - train.start_date - train.day_diff_leav[start] - 1; //是天数的序号，不是共经过多少天
     if (day_num < 0 || day_num >= train.running_duration) {
         std::cout << -1 << '\n';
         return;
@@ -298,7 +320,7 @@ void Train::BuyTicket(const BuyInfo &order_info) { //todo:要求user已登录！
     int price = 0;
     for (int i = start; i < end; ++i) price += train.prices[i];
     MyDate arrive_date = order_info.date + (train.day_diff_arr[end] - train.day_diff_leav[start]);
-    int ticket_nums[100], seat = train.seat_num;
+    int ticket_nums[100], seat = order_info.num;
     int ticket_start_pos = train.ticket_pos + (day_num * (train.station_num - 1) + start) * sizeof(int);
     ticket_io.ContinuousRead(end - start, ticket_start_pos, ticket_nums);
     for (int k = 0; k < end - start; ++k) {
@@ -311,25 +333,27 @@ void Train::BuyTicket(const BuyInfo &order_info) { //todo:要求user已登录！
         int pos = order_io.Write(order);
         orders.Insert(MyString(order_info.userID), pos);
         for (int k = 0; k < end - start; ++k) ticket_nums[k] -= order.num;
-        order_io.ContinuousWrite(end - start, ticket_start_pos, ticket_nums);
+        ticket_io.ContinuousWrite(end - start, ticket_start_pos, ticket_nums);
+        std::cout << order.price * order.num << '\n';
     } else {
         order.status = 0;
         int pos = order_io.Write(order);
         orders.Insert(MyString(order_info.userID), pos);
         queue.Insert(WaitingPair(order_info.trainID, day_num), pos); //插入排队信息
+        std::cout << "queue\n";
     }
 }
 
-void Train::QueryOrder(const std::string &ID) { //TODO：要求用户已经登录！
+void Train::QueryOrder(const std::string &ID) {
     std::vector<int> poses = orders.Find(ID);
     if (poses.empty()) {
-        std::cout << -1 << '\n';
+        std::cout << 0 << '\n';
         return;
     }
     std::cout << poses.size() << '\n';
-    for (int &pos: poses) {
+    for (int i = poses.size() - 1; i >= 0; --i) { //按照从新到旧的顺序排序
         OrderInfo order;
-        order_io.Read(order, pos);
+        order_io.Read(order, poses[i]);
         if (order.status == -1) {
             std::cout << "[refunded] ";
         } else if (order.status == 0) {
@@ -345,55 +369,53 @@ void Train::QueryOrder(const std::string &ID) { //TODO：要求用户已经登�
 
 void Train::RefundTicket(const std::string &ID, const int &num) {
     std::vector<int> poses = orders.Find(ID);
-    if (poses.empty()) {
+    if (poses.empty() || poses.size() < num) {
         std::cout << -1 << '\n';
         return;
     }
     OrderInfo order;
-    order_io.Read(order, poses[num - 1]);
+    order_io.Read(order, poses[poses.size() - num]);
     if (order.status == -1) { //已退票！
         std::cout << -1 << '\n';
         return;
     }
+    std::cout << 0 << '\n';
     if (order.status == 0) {
-        queue.Erase(WaitingPair(order.trainID, order.day_num), poses[0]);
+        queue.Erase(WaitingPair(order.trainID, order.day_num), poses[poses.size() - num]);
         order.status = -1;
-        order_io.Write(order, poses[num - 1]); //写入订单信息
-        std::cout << 0 << '\n';
+        order_io.Write(order, poses[poses.size() - num]); //写入订单信息
         return;
     }
     // 正式退票
-    order.status == -1;
-    order_io.Write(order, poses[num - 1]); //写入订单信息
+    order.status = -1;
+    order_io.Write(order, poses[poses.size() - num]); //写入订单信息
     int *tickets = new int[order.station_nums];
     ticket_io.ContinuousRead(order.station_nums, order.ticket_start_pos, tickets);
     for (int i = 0; i < order.station_nums; ++i) tickets[i] += order.num;
-    ticket_io.ContinuousWrite(order.station_nums, order.ticket_start_pos, tickets); //补票
+    ticket_io.ContinuousWrite(order.station_nums, order.ticket_start_pos, tickets);
+    //补票
     std::vector<int> pending_orders = queue.Find(WaitingPair(order.trainID, order.day_num));
-    if (pending_orders.empty()) {
-        std::cout << 0 << '\n';
-        return;
-    }
+    if (pending_orders.empty()) return;
     for (int pos: pending_orders) {
-        OrderInfo order;
-        order_io.Read(order,pos);
-        int *tickets = new int [order.station_nums] ;
-        ticket_io.ContinuousRead(order.station_nums,order.ticket_start_pos,tickets);
+        OrderInfo pending_order;
+        order_io.Read(pending_order, pos);
+        int *tickets2 = new int[pending_order.station_nums];
+        ticket_io.ContinuousRead(pending_order.station_nums, pending_order.ticket_start_pos, tickets2);
         bool flag = true;
-        for(int i = 0;i<order.station_nums;++i) {
-            if(tickets[i]<order.num){
+        for (int i = 0; i < pending_order.station_nums; ++i) {
+            if (tickets2[i] < pending_order.num) {
                 flag = false;
                 break;
             }
         }
-        if(!flag) continue;
+        if (!flag) continue;
         //可以买到票了！
-        for(int i = 0;i<order.station_nums;++i) {
-            tickets[i] -= order.num;
+        for (int i = 0; i < pending_order.station_nums; ++i) {
+            tickets2[i] -= pending_order.num;
         }
-        ticket_io.ContinuousWrite(order.station_nums,order.ticket_start_pos,tickets);
-        order.status = 1;
-        order_io.Write(order,pos);
+        ticket_io.ContinuousWrite(pending_order.station_nums, pending_order.ticket_start_pos, tickets2);
+        pending_order.status = 1;
+        order_io.Write(pending_order, pos);
     }
 }
 
