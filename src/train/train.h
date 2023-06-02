@@ -49,5 +49,6 @@ public:
 
     void Clean();
 
+
 };
 #endif //BPT_TRAIN_H

@@ -1,11 +1,15 @@
+#include <filesystem>
 #include "bpt/bpt.h"
 #include "user/user.h"
 #include "train/train.h"
 #include "parser/parser.h"
 
 int main() {
-//    freopen("../Ticket 2023 下发数据/basic_6/1.in","r",stdin);
+//    freopen("../testcases/pressure_1_easy/1.in","r",stdin);
 //    freopen("outt","w",stdout);
+    std::ios::sync_with_stdio(false);
+    std::filesystem::path pathh{"files"};
+    std::filesystem::create_directory(pathh);
     User user_system;
     Train train_system;
     Parser parser;

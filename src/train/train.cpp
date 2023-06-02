@@ -1,14 +1,14 @@
 #include "train.h"
 
-Train::Train() : all_trains("../files/train/train_index", "../files/train/train_seq"),
-                 released_trains("../files/release/released_index", "../files/release/released_seq"),
-                 stations("../files/station/station_index", "../files/station/station_seq"),
-                 station_pairs("../files/pair/pair_index", "../files/pair/pair_seq"),
-                 train_io("../files/train/train_information"),
-                 ticket_io("../files/ticket/ticket_information"),
-                 orders("../files/order/order_index", "../files/order/order_seq"),
-                 order_io("../files/order/order_information"),
-                 queue("../files/queue/queue_index", "../files/queue/queue_seq") {}
+Train::Train() : all_trains("./files/train_index", "./files/train_seq"),
+                 released_trains("./files/released_index", "./files/released_seq"),
+                 stations("./files/station_index", "./files/station_seq"),
+                 station_pairs("./files/pair_index", "./files/pair_seq"),
+                 train_io("./files/train_information"),
+                 ticket_io("./files/ticket_information"),
+                 orders("./files/order_index", "./files/order_seq"),
+                 order_io("./files/order_information"),
+                 queue("./files/queue_index", "./files/queue_seq") {}
 
 void Train::AddTrain(TrainInfo new_train) {
     std::vector<int> a = all_trains.Find(new_train.trainID);
@@ -386,6 +386,11 @@ void Train::RefundTicket(const std::string &ID, const int &num) {
         return;
     }
     std::cout << 0 << '\n';
+    //debug
+//    if(ID == "Skadi"){
+//        std::cout<<"trainID "<<order.trainID<<" start "<<order.start<<" end "<<order.end<<" date "<<order.start_d<<'\n';
+//    }
+    //debug
     if (order.status == 0) {
         queue.Erase(WaitingPair(order.trainID, order.day_num), poses[poses.size() - num]);
         order.status = -1;
@@ -422,7 +427,10 @@ void Train::RefundTicket(const std::string &ID, const int &num) {
         ticket_io.ContinuousWrite(pending_order.station_nums, pending_order.ticket_start_pos, tickets2);
         pending_order.status = 1;
         order_io.Write(pending_order, pos);
+        queue.Erase(WaitingPair(order.trainID, order.day_num),pos);
     }
 }
+
+
 
 

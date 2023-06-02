@@ -1,8 +1,8 @@
 #include "user.h"
 
-User::User() : all_users("../files/user/user_index", "../files/user/user_seq"),
-               users_logged("../files/log/logged_index", "../files/log/logged_seq"),
-               user_io("../files/user/user_information") {}
+User::User() : all_users("./files/user_index", "./files/user_seq"),
+               users_logged("./files/logged_index", "./files/logged_seq"),
+               user_io("./files/user_information") {}
 
 
 void User::AddUser(const std::string &cur_ID, UserInfo &new_user) {
