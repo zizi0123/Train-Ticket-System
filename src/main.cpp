@@ -5,7 +5,7 @@
 #include "parser/parser.h"
 
 int main() {
-//    freopen("../testcases/basic_6/9.in","r",stdin);
+//    freopen("../testcases/pressure_1_easy/2.in","r",stdin);
 //    freopen("outt","w",stdout);
     std::ios::sync_with_stdio(false);
     std::filesystem::path pathh{"files"};

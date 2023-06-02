@@ -131,8 +131,8 @@ MyDate MyDate::operator+(const int &a) const {
     MyDate ans = *this;
     const int day_of_months[13] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
     ans.day += a;
-    while (ans.day > day_of_months[month]) {
-        ans.day -= day_of_months[month];
+    while (ans.day > day_of_months[ans.month]) {
+        ans.day -= day_of_months[ans.month];
         ++ans.month;
     }
     return ans;
