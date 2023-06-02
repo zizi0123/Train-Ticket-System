@@ -5,11 +5,11 @@
 #include "parser/parser.h"
 
 int main() {
-//    freopen("../testcases/pressure_1_easy/1.in","r",stdin);
+//    freopen("../testcases/basic_6/9.in","r",stdin);
 //    freopen("outt","w",stdout);
     std::ios::sync_with_stdio(false);
     std::filesystem::path pathh{"files"};
-    std::filesystem::create_directory(pathh);
+    if(!std::filesystem::exists(pathh)) std::filesystem::create_directory(pathh);
     User user_system;
     Train train_system;
     Parser parser;

@@ -194,11 +194,11 @@ void Train::QueryTransfer(QueryTicketInfo info) {
         if (info.date < train1.start_date) continue;
         int day_num1 = info.date - train1.start_date - train1.day_diff_leav[start] - 1;
         if (day_num1 < 0 || day_num1 >= train1.running_duration || start == train1.station_num - 1) continue;
-        seat1 = train1.seat_num;
         price1 = 0;
         int ticket_start_pos1 = train1.ticket_pos + (day_num1 * (train1.station_num - 1) + start) * sizeof(int);
         for (trans1 = start + 1; trans1 < train1.station_num; ++trans1) { //尝试以start后的每一站作为中转站
             int ticket_nums[101];
+            seat1 = train1.seat_num;
             ticket_io.ContinuousRead(trans1 - start, ticket_start_pos1, ticket_nums);
             for (int k = 0; k < trans1 - start; ++k) {
                 if (ticket_nums[k] < seat1) seat1 = ticket_nums[k];
@@ -437,6 +437,7 @@ void Train::RefundTicket(const std::string &ID, const int &num) {
 bool Train::TicketPriceCmp(const int &p,const int &t,const char ID1[] ,const char ID2[] ,int &best_t,int &best_p,const char ticketID1[],const char ticketID2[]) {
     if (p < best_p) {
         best_p = p;
+        best_t = t;
         return true;
     }
     if (p == best_p) {
@@ -462,6 +463,7 @@ bool Train::TicketPriceCmp(const int &p,const int &t,const char ID1[] ,const cha
 bool Train::TicketTimeCmp(const int &p,const int &t,const char ID1[] ,const char ID2[] ,int &best_t,int &best_p,const char ticketID1[],const char ticketID2[]) {
     if (t < best_t) {
         best_t = t;
+        best_p = p;
         return true;
     }
     if (t == best_t) {
