@@ -4,8 +4,8 @@
 #include "parser/parser.h"
 
 int main() {
-    freopen("../Ticket 2023 下发数据/basic_3/5.in","r",stdin);
-    freopen("outt","w",stdout);
+//    freopen("../Ticket 2023 下发数据/basic_6/1.in","r",stdin);
+//    freopen("outt","w",stdout);
     User user_system;
     Train train_system;
     Parser parser;
