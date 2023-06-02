@@ -119,7 +119,7 @@ void Train::QueryTicket(QueryTicketInfo info) { //只能查到已经release的�
     strcpy(a + strlen(a), info.end);
     std::vector<int> poses = station_pairs.Find(a);
     if (poses.empty()) {
-        std::cout << -1 << '\n';
+        std::cout << 0 << '\n';
         return;
     }
     int total_num = 0;//符合要求的车次总数
@@ -178,7 +178,11 @@ void Train::QueryTransfer(QueryTicketInfo info) {
     TicketInfo ticket1, ticket2;
     char transfer_station[41];
     std::vector<int> poses1 = stations.Find(info.start);
-    int price1, price2, seat1 = INT32_MAX, seat2 = INT32_MAX;
+    if(poses1.empty()){
+        std::cout<<0<<'\n';
+        return;
+    }
+    int price1, price2, seat1, seat2;
     for (auto &pos1: poses1) {
         TrainInfo train1;
         train_io.Read(train1, pos1);
@@ -189,26 +193,26 @@ void Train::QueryTransfer(QueryTicketInfo info) {
         if (info.date < train1.start_date) continue;
         int day_num1 = info.date - train1.start_date - train1.day_diff_leav[start] - 1;
         if (day_num1 < 0 || day_num1 >= train1.running_duration || start == train1.station_num - 1) continue;
+        seat1 = train1.seat_num;
         price1 = 0;
-        for (trans1 = start + 1; trans1 < train1.station_num - 1; ++trans1) { //尝试以start后的每一站作为中转站
+        int ticket_start_pos1 = train1.ticket_pos + (day_num1 * (train1.station_num - 1) + start) * sizeof(int);
+        for (trans1 = start + 1; trans1 < train1.station_num; ++trans1) { //尝试以start后的每一站作为中转站
+            int ticket_nums[101];
+            ticket_io.ContinuousRead(trans1 - start, ticket_start_pos1, ticket_nums);
+            for (int k = 0; k < trans1 - start; ++k) {
+                if (ticket_nums[k] < seat1) seat1 = ticket_nums[k];
+            }
             price1 += train1.prices[trans1 - 1];
+            MyDate trans_date1 = info.date + (train1.day_diff_arr[trans1] - train1.day_diff_leav[start]); //从中转站下车的日期
             char a[81];
             strcpy(a, train1.stations[trans1]);
             strcpy(a + strlen(a), info.end);
-            MyDate trans_date1 =
-                    info.date + (train1.day_diff_arr[trans1] - train1.day_diff_leav[start]); //从中转站下车的日期
             std::vector<int> poses2 = station_pairs.Find(a);
             if (!poses2.empty()) { //说明此站有作为中转站的可能
-                int ticket_nums[101];
-                int ticket_start_pos1 = train1.ticket_pos + (day_num1 * (train1.station_num - 1) + start) * sizeof(int);
-                ticket_io.ContinuousRead(trans1 - start, ticket_start_pos1, ticket_nums);
-                for (int k = 0; k < trans1 - start; ++k) {
-                    if (ticket_nums[k] < seat1) seat1 = ticket_nums[k];
-                }
                 for (auto &pos2: poses2) { //遍历每个车次
+                    if (pos2 == pos1) continue; //要求两班车不同
                     int day_num2; //train2是第几号车
                     TrainInfo train2;
-                    if (pos2 == pos1) continue; //要求两班车不同
                     train_io.Read(train2, pos2);
                     int trans2, end;
                     for (int k = 0; k < train2.station_num; ++k) {
@@ -225,26 +229,24 @@ void Train::QueryTransfer(QueryTicketInfo info) {
                             break;
                         }
                     }
-                    MyDate last_date = train2.start_date +
-                                       (train2.running_duration - 1 + train2.day_diff_leav[trans2]); //从中转站出发的最后一天
+                    MyDate last_date = train2.start_date + (train2.running_duration - 1 + train2.day_diff_leav[trans2]); //从中转站出发的最后一天
                     MyDate first_date = train2.start_date + train2.day_diff_leav[trans2]; //从中转站出发的第一天
                     if (last_date < trans_date1 || (last_date == trans_date1 &&
-                                                    train2.leaving_time[trans2] < train1.arriving_time[trans1]))
-                        continue; //没有机会坐上这班车
+                                                    train2.leaving_time[trans2] < train1.arriving_time[trans1])) continue; //没有机会坐上这班车
                     MyDate trans_date2; //从中转站上车的日期
                     if (trans_date1 < first_date || (trans_date1 == first_date && train1.arriving_time[trans1] <=
                                                                                   train2.leaving_time[trans2])) {
                         day_num2 = 0;
-                        trans_date2 = train2.start_date + train2.day_diff_leav[trans2];
+                        trans_date2 = first_date;
                     } else {
                         if (train1.arriving_time[trans1] <= train2.leaving_time[trans2]) { //买同一天的即可
-                            day_num2 = trans_date1 - train2.start_date - 1;
                             trans_date2 = trans_date1;
                         } else { //得买后一天的
-                            day_num2 = trans_date1 - train2.start_date - 1;
                             trans_date2 = trans_date1 + 1;
                         }
+                        day_num2 = trans_date2 - train2.start_date - train2.day_diff_leav[trans2] - 1;
                     }
+                    seat2 = train2.seat_num;
                     int ticket_start_pos2 =
                             train2.ticket_pos + (day_num2 * (train2.station_num - 1) + trans2) * sizeof(int);
                     ticket_io.ContinuousRead(end - trans2, ticket_start_pos2, ticket_nums);
@@ -253,14 +255,13 @@ void Train::QueryTransfer(QueryTicketInfo info) {
                     }
                     MyDate arrive_date = trans_date2 + (train2.day_diff_arr[end] - train2.day_diff_leav[trans2]);//下车日期
                     int price = price1 + price2;
-                    int seat = seat1 < seat2 ? seat1 : seat2;
                     int time =
                             (arrive_date - info.date - 1 ) * 1440 + (train2.arriving_time[end] - train1.leaving_time[start]);
                     if ((info.time_first && time < best_val) || (!info.time_first && price < best_val)) {
                         ticket1 = TicketInfo(train1.trainID, info.date, train1.leaving_time[start], trans_date1,
-                                             train1.arriving_time[trans1], price1, seat);
+                                             train1.arriving_time[trans1], price1, seat1);
                         ticket2 = TicketInfo(train2.trainID, trans_date2, train2.leaving_time[trans2], arrive_date,
-                                             train2.arriving_time[end], price2, seat);
+                                             train2.arriving_time[end], price2, seat2);
                         strcpy(transfer_station, train1.stations[trans1]);
                         if (info.time_first) {
                             best_val = time;
@@ -290,6 +291,7 @@ void Train::Clean() {
     stations.Clean();
     station_pairs.Clean();
     orders.Clean();
+    queue.Clean();
     train_io.Clean();
     ticket_io.Clean();
     order_io.Clean();
@@ -336,11 +338,15 @@ void Train::BuyTicket(const BuyInfo &order_info) {
         ticket_io.ContinuousWrite(end - start, ticket_start_pos, ticket_nums);
         std::cout << order.price * order.num << '\n';
     } else {
-        order.status = 0;
-        int pos = order_io.Write(order);
-        orders.Insert(MyString(order_info.userID), pos);
-        queue.Insert(WaitingPair(order_info.trainID, day_num), pos); //插入排队信息
-        std::cout << "queue\n";
+        if(order_info.queue) {
+            order.status = 0;
+            int pos = order_io.Write(order);
+            orders.Insert(MyString(order_info.userID), pos);
+            queue.Insert(WaitingPair(order_info.trainID, day_num), pos); //插入排队信息
+            std::cout << "queue\n";
+        }else{
+            std::cout<<-1<<'\n';
+        }
     }
 }
 

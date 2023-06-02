@@ -179,6 +179,7 @@ void Parser::Process() {
             }
         }
     } else if (command == "buy_ticket") {
+        buy_info.queue = false; //默认值
         for (int i = 1; i < sections.size(); i += 2) {
             if (sections[i - 1] == "-u") {
                 strcpy(buy_info.userID, sections[i].c_str());
