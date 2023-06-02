@@ -171,15 +171,16 @@ void Train::QueryTicket(QueryTicketInfo info) { //只能查到已经release的�
                   << tickets[i].start_time << " -> " << info.end << ' ' << tickets[i].end_date << ' '
                   << tickets[i].end_time << ' ' << tickets[i].price << ' ' << tickets[i].ava_ticket << '\n';
     }
+    delete [] tickets;
 }
 
 void Train::QueryTransfer(QueryTicketInfo info) {
-    int best_val = INT32_MAX;
+    int best_time = INT32_MAX, best_price = INT32_MAX;
     TicketInfo ticket1, ticket2;
     char transfer_station[41];
     std::vector<int> poses1 = stations.Find(info.start);
-    if(poses1.empty()){
-        std::cout<<0<<'\n';
+    if (poses1.empty()) {
+        std::cout << 0 << '\n';
         return;
     }
     int price1, price2, seat1, seat2;
@@ -229,10 +230,12 @@ void Train::QueryTransfer(QueryTicketInfo info) {
                             break;
                         }
                     }
-                    MyDate last_date = train2.start_date + (train2.running_duration - 1 + train2.day_diff_leav[trans2]); //从中转站出发的最后一天
+                    MyDate last_date = train2.start_date +
+                                       (train2.running_duration - 1 + train2.day_diff_leav[trans2]); //从中转站出发的最后一天
                     MyDate first_date = train2.start_date + train2.day_diff_leav[trans2]; //从中转站出发的第一天
                     if (last_date < trans_date1 || (last_date == trans_date1 &&
-                                                    train2.leaving_time[trans2] < train1.arriving_time[trans1])) continue; //没有机会坐上这班车
+                                                    train2.leaving_time[trans2] < train1.arriving_time[trans1]))
+                        continue; //没有机会坐上这班车
                     MyDate trans_date2; //从中转站上车的日期
                     if (trans_date1 < first_date || (trans_date1 == first_date && train1.arriving_time[trans1] <=
                                                                                   train2.leaving_time[trans2])) {
@@ -256,24 +259,27 @@ void Train::QueryTransfer(QueryTicketInfo info) {
                     MyDate arrive_date = trans_date2 + (train2.day_diff_arr[end] - train2.day_diff_leav[trans2]);//下车日期
                     int price = price1 + price2;
                     int time =
-                            (arrive_date - info.date - 1 ) * 1440 + (train2.arriving_time[end] - train1.leaving_time[start]);
-                    if ((info.time_first && time < best_val) || (!info.time_first && price < best_val)) {
+                            (arrive_date - info.date - 1) * 1440 +
+                            (train2.arriving_time[end] - train1.leaving_time[start]);
+                    if(info.time_first && TicketTimeCmp(price,time,train1.trainID,train2.trainID,best_time,best_price,ticket1.trainID,ticket2.trainID)){
                         ticket1 = TicketInfo(train1.trainID, info.date, train1.leaving_time[start], trans_date1,
                                              train1.arriving_time[trans1], price1, seat1);
                         ticket2 = TicketInfo(train2.trainID, trans_date2, train2.leaving_time[trans2], arrive_date,
                                              train2.arriving_time[end], price2, seat2);
                         strcpy(transfer_station, train1.stations[trans1]);
-                        if (info.time_first) {
-                            best_val = time;
-                        } else {
-                            best_val = price;
-                        }
+                    }
+                    if(!info.time_first && TicketPriceCmp(price,time,train1.trainID,train2.trainID,best_time,best_price,ticket1.trainID,ticket2.trainID)){
+                        ticket1 = TicketInfo(train1.trainID, info.date, train1.leaving_time[start], trans_date1,
+                                             train1.arriving_time[trans1], price1, seat1);
+                        ticket2 = TicketInfo(train2.trainID, trans_date2, train2.leaving_time[trans2], arrive_date,
+                                             train2.arriving_time[end], price2, seat2);
+                        strcpy(transfer_station, train1.stations[trans1]);
                     }
                 }
             }
         }
     }
-    if (best_val == INT32_MAX) {
+    if (info.time_first && best_time == INT32_MAX || !info.time_first && best_price == INT32_MAX) {
         std::cout << 0 << '\n';
     } else {
         std::cout << ticket1.trainID << ' ' << info.start << ' ' << ticket1.start_date << ' '
@@ -338,14 +344,14 @@ void Train::BuyTicket(const BuyInfo &order_info) {
         ticket_io.ContinuousWrite(end - start, ticket_start_pos, ticket_nums);
         std::cout << order.price * order.num << '\n';
     } else {
-        if(order_info.queue) {
+        if (order_info.queue) {
             order.status = 0;
             int pos = order_io.Write(order);
             orders.Insert(MyString(order_info.userID), pos);
             queue.Insert(WaitingPair(order_info.trainID, day_num), pos); //插入排队信息
             std::cout << "queue\n";
-        }else{
-            std::cout<<-1<<'\n';
+        } else {
+            std::cout << -1 << '\n';
         }
     }
 }
@@ -386,11 +392,6 @@ void Train::RefundTicket(const std::string &ID, const int &num) {
         return;
     }
     std::cout << 0 << '\n';
-    //debug
-//    if(ID == "Skadi"){
-//        std::cout<<"trainID "<<order.trainID<<" start "<<order.start<<" end "<<order.end<<" date "<<order.start_d<<'\n';
-//    }
-    //debug
     if (order.status == 0) {
         queue.Erase(WaitingPair(order.trainID, order.day_num), poses[poses.size() - num]);
         order.status = -1;
@@ -427,9 +428,61 @@ void Train::RefundTicket(const std::string &ID, const int &num) {
         ticket_io.ContinuousWrite(pending_order.station_nums, pending_order.ticket_start_pos, tickets2);
         pending_order.status = 1;
         order_io.Write(pending_order, pos);
-        queue.Erase(WaitingPair(order.trainID, order.day_num),pos);
+        queue.Erase(WaitingPair(order.trainID, order.day_num), pos);
+        delete [] tickets2;
     }
+    delete [] tickets;
 }
+
+bool Train::TicketPriceCmp(const int &p,const int &t,const char ID1[] ,const char ID2[] ,int &best_t,int &best_p,const char ticketID1[],const char ticketID2[]) {
+    if (p < best_p) {
+        best_p = p;
+        return true;
+    }
+    if (p == best_p) {
+        if (t < best_t) {
+            best_t = t;
+            return true;
+        }
+        if (t == best_t) {
+            if (strcmp(ID1, ticketID1) < 0) {
+                return true;
+            }
+            if (strcmp(ID1, ticketID1) == 0) {
+                if (strcmp(ID2, ticketID2) < 0) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+
+}
+
+bool Train::TicketTimeCmp(const int &p,const int &t,const char ID1[] ,const char ID2[] ,int &best_t,int &best_p,const char ticketID1[],const char ticketID2[]) {
+    if (t < best_t) {
+        best_t = t;
+        return true;
+    }
+    if (t == best_t) {
+        if (p < best_p) {
+            best_p = p;
+            return true;
+        }
+        if (p == best_p) {
+            if (strcmp(ID1, ticketID1) < 0) {
+                return true;
+            }
+            if (strcmp(ID1, ticketID1) == 0) {
+                if (strcmp(ID2, ticketID2) < 0) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
 
 
 

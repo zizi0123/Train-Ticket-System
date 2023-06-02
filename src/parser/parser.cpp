@@ -167,6 +167,7 @@ void Parser::Process() {
             }
         }
     } else if (command == "query_ticket" || command == "query_transfer") {
+        query_ticket_info.time_first = true; //默认值
         for (int i = 1; i < sections.size(); i += 2) {
             if (sections[i - 1] == "-s") {
                 strcpy(query_ticket_info.start, sections[i].c_str());
@@ -198,6 +199,7 @@ void Parser::Process() {
             }
         }
     } else if (command == "refund_ticket") {
+        num = 1; //默认值
         for (int i = 1; i < sections.size(); i += 2) {
             if (sections[i - 1] == "-u") {
                 ID = sections[i];

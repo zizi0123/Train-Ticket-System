@@ -26,6 +26,11 @@ private:
     FilePointer<TrainInfo> train_io;
     FilePointer<int> ticket_io;
     FilePointer<OrderInfo> order_io;
+
+    bool TicketPriceCmp(const int &p,const int &t,const char ID1[] ,const char ID2[] ,int &best_t,int &best_p,const char ticketID1[],const char ticketID2[]);
+
+    bool TicketTimeCmp(const int &p,const int &t,const char ID1[] ,const char ID2[] ,int &best_t,int &best_p,const char ticketID1[],const char ticketID2[]);
+
 public:
     Train();
 
