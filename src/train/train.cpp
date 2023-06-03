@@ -11,7 +11,7 @@ Train::Train() : all_trains("./files/train_index", "./files/train_seq"),
                  queue("./files/queue_index", "./files/queue_seq") {}
 
 void Train::AddTrain(TrainInfo new_train) {
-    std::vector<int> a = all_trains.Find(new_train.trainID);
+    MyVector<int> a = all_trains.Find(new_train.trainID);
     if (!a.empty()) {
         std::cout << -1 << '\n';
         return;
@@ -22,8 +22,8 @@ void Train::AddTrain(TrainInfo new_train) {
 }
 
 void Train::DeleteTrain(const std::string &ID) {
-    std::vector<int> a1 = all_trains.Find(ID);
-    std::vector<int> a2 = released_trains.Find(ID);
+    MyVector<int> a1 = all_trains.Find(ID);
+    MyVector<int> a2 = released_trains.Find(ID);
     if (a1.empty() || !a2.empty()) {
         std::cout << -1 << '\n';
         return;
@@ -33,8 +33,8 @@ void Train::DeleteTrain(const std::string &ID) {
 }
 
 void Train::ReleaseTrain(const std::string &ID) { //只有在release后，才在bpt中写入了station->pos信息、station_pair->pos信息、车票数量的一连串信息。
-    std::vector<int> a1 = all_trains.Find(ID);
-    std::vector<int> a2 = released_trains.Find(ID);
+    MyVector<int> a1 = all_trains.Find(ID);
+    MyVector<int> a2 = released_trains.Find(ID);
     if (a1.empty() || !a2.empty()) {
         std::cout << -1 << '\n';
         return;
@@ -60,12 +60,12 @@ void Train::ReleaseTrain(const std::string &ID) { //只有在release后，才在
 
 void Train::QueryTrain(const MyDate &date,
                        const std::string &ID) { //released的车次和未被released的车次都可以被查到。注意,要求date必须在该车的发车区间内，否则失败。
-    std::vector<int> a1 = all_trains.Find(ID);
+    MyVector<int> a1 = all_trains.Find(ID);
     if (a1.empty()) {
         std::cout << -1 << '\n';
         return;
     }
-    std::vector<int> a2 = released_trains.Find(ID);
+    MyVector<int> a2 = released_trains.Find(ID);
     TrainInfo train_info;
     train_io.Read(train_info, a1[0]);
     if (date < train_info.start_date) {
@@ -117,14 +117,15 @@ void Train::QueryTicket(QueryTicketInfo info) { //只能查到已经release的�
     char a[81];
     strcpy(a, info.start);
     strcpy(a + strlen(a), info.end);
-    std::vector<int> poses = station_pairs.Find(a);
+    MyVector<int> poses = station_pairs.Find(a);
     if (poses.empty()) {
         std::cout << 0 << '\n';
         return;
     }
     int total_num = 0;//符合要求的车次总数
     TicketInfo *tickets = new TicketInfo[poses.size()];
-    for (int pos: poses) { //对于每一班经过这两站的车次：
+    for (int i = 0;i<poses.size();++i) { //对于每一班经过这两站的车次：
+        int pos = poses[i];
         TrainInfo train_info;
         train_io.Read(train_info, pos);
         int start, end;
@@ -178,13 +179,14 @@ void Train::QueryTransfer(QueryTicketInfo info) {
     int best_time = INT32_MAX, best_price = INT32_MAX;
     TicketInfo ticket1, ticket2;
     char transfer_station[41];
-    std::vector<int> poses1 = stations.Find(info.start);
+    MyVector<int> poses1 = stations.Find(info.start);
     if (poses1.empty()) {
         std::cout << 0 << '\n';
         return;
     }
     int price1, price2, seat1, seat2;
-    for (auto &pos1: poses1) {
+    for (int i = 0;i<poses1.size();++i) {
+        int pos1 = poses1[i];
         TrainInfo train1;
         train_io.Read(train1, pos1);
         int start = 0, trans1;
@@ -208,9 +210,10 @@ void Train::QueryTransfer(QueryTicketInfo info) {
             char a[81];
             strcpy(a, train1.stations[trans1]);
             strcpy(a + strlen(a), info.end);
-            std::vector<int> poses2 = station_pairs.Find(a);
+            MyVector<int> poses2 = station_pairs.Find(a);
             if (!poses2.empty()) { //说明此站有作为中转站的可能
-                for (auto &pos2: poses2) { //遍历每个车次
+                for (int j = 0;j<poses2.size();++j) { //遍历每个车次
+                    int pos2 = poses2[j];
                     if (pos2 == pos1) continue; //要求两班车不同
                     int day_num2; //train2是第几号车
                     TrainInfo train2;
@@ -304,7 +307,7 @@ void Train::Clean() {
 }
 
 void Train::BuyTicket(const BuyInfo &order_info) {
-    std::vector<int> a = released_trains.Find(MyString(order_info.trainID));
+    MyVector<int> a = released_trains.Find(MyString(order_info.trainID));
     if (a.empty()) {
         std::cout << -1 << '\n';
         return;
@@ -357,7 +360,7 @@ void Train::BuyTicket(const BuyInfo &order_info) {
 }
 
 void Train::QueryOrder(const std::string &ID) {
-    std::vector<int> poses = orders.Find(ID);
+    MyVector<int> poses = orders.Find(ID);
     if (poses.empty()) {
         std::cout << 0 << '\n';
         return;
@@ -380,7 +383,7 @@ void Train::QueryOrder(const std::string &ID) {
 }
 
 void Train::RefundTicket(const std::string &ID, const int &num) {
-    std::vector<int> poses = orders.Find(ID);
+    MyVector<int> poses = orders.Find(ID);
     if (poses.empty() || poses.size() < num) {
         std::cout << -1 << '\n';
         return;
@@ -406,9 +409,10 @@ void Train::RefundTicket(const std::string &ID, const int &num) {
     for (int i = 0; i < order.station_nums; ++i) tickets[i] += order.num;
     ticket_io.ContinuousWrite(order.station_nums, order.ticket_start_pos, tickets);
     //补票
-    std::vector<int> pending_orders = queue.Find(WaitingPair(order.trainID, order.day_num));
+    MyVector<int> pending_orders = queue.Find(WaitingPair(order.trainID, order.day_num));
     if (pending_orders.empty()) return;
-    for (int pos: pending_orders) {
+    for (int k = 0;k<pending_orders.size();++k) {
+        int pos = pending_orders[k];
         OrderInfo pending_order;
         order_io.Read(pending_order, pos);
         int *tickets2 = new int[pending_order.station_nums];

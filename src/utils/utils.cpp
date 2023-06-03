@@ -185,3 +185,53 @@ std::ostream &operator<<(std::ostream &os, const MyTime &time) {
     return os;
 }
 
+template<typename T>
+void MyVector<T>::double_space() {
+    T *temp = bbegin;
+    bbegin = alloc.allocate(2 * maxsize);
+    for (int i = 0; i < ssize; ++i) alloc.construct(bbegin + i, *(temp + i));
+    for (int i = 0; i < ssize; ++i) alloc.destroy(temp + i);
+    alloc.deallocate(temp, maxsize);
+    maxsize *= 2;
+}
+
+template<typename T>
+void MyVector<T>::push_back(const T &value)  {
+    if (ssize == maxsize) {
+        double_space();
+    }
+    ++ssize;
+    alloc.construct(bbegin + ssize - 1, value);
+}
+
+template<typename T>
+bool MyVector<T>::empty() const{
+    return ssize == 0;
+}
+
+template<typename T>
+size_t MyVector<T>::size() const  {
+    return ssize;
+}
+
+template<typename T>
+T &MyVector<T>::operator[](const size_t &pos)  {
+    return *(bbegin + pos);
+}
+
+template<typename T>
+MyVector<T>::~MyVector() {
+    for (int i = 0; i < ssize; ++i) alloc.destroy(bbegin + i);
+    alloc.deallocate(bbegin, maxsize);
+    maxsize = 0;
+    ssize = 0;
+    bbegin = nullptr;
+}
+
+template<typename T>
+MyVector<T>::MyVector() {
+    maxsize = 300;
+    bbegin = alloc.allocate(300);
+    ssize = 0;
+}
+

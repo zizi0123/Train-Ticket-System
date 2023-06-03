@@ -7,7 +7,6 @@
 
 #include <string>
 #include <algorithm>
-#include <vector>
 #include <queue>
 #include "../bpt/bpt.h"
 #include "train_type.h"

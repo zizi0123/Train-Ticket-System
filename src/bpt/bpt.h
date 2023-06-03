@@ -6,7 +6,6 @@
 #include <fstream>
 #include <iostream>
 #include <cstring>
-#include <vector>
 #include "../utils/utils.h"
 #include "../train/train_type.h"
 
@@ -143,7 +142,7 @@ public:
 
     void Erase(const Key &, const Val &);
 
-    std::vector<Val> Find(const Key &);
+    MyVector<Val> Find(const Key &);
 
     void Clean();
 

@@ -13,7 +13,7 @@ void User::AddUser(const std::string &cur_ID, UserInfo &new_user) {
         std::cout << 0 << '\n';
     } else {
         int pri = CheckLog(cur_ID);
-        std::vector<int> a = all_users.Find(new_user.userID);
+        MyVector<int> a = all_users.Find(new_user.userID);
         if (!a.empty() || pri == -1 || pri <= new_user.privilege) {
             std::cout << -1 << '\n';
             return;
@@ -26,7 +26,7 @@ void User::AddUser(const std::string &cur_ID, UserInfo &new_user) {
 
 void User::Login(const std::string &userID, const std::string &password) {
     int pri = CheckLog(userID);
-    std::vector<int> a2 = all_users.Find(userID);
+    MyVector<int> a2 = all_users.Find(userID);
     if (a2.empty() || pri != -1) {
         std::cout << -1 << '\n';
         return;
@@ -57,7 +57,7 @@ void User::QueryProfile(const std::string cur_ID, const std::string ID) {
         std::cout << -1 << '\n';
         return;
     }
-    std::vector<int> a2 = all_users.Find(ID);
+    MyVector<int> a2 = all_users.Find(ID);
     if (a2.empty()) {  //确保待查询用户存在
         std::cout << -1 << '\n';
         return;
@@ -78,7 +78,7 @@ void User::ModifyProfile(const ModifyInfo &modify_info) {
         std::cout << -1 << '\n';
         return;
     }
-    std::vector<int> a2 = all_users.Find(modify_info.userID);
+    MyVector<int> a2 = all_users.Find(modify_info.userID);
     if (a2.empty()) { //确保待修改用户存在
         std::cout << -1 << '\n';
         return;
@@ -110,7 +110,7 @@ void User::Exit() {
 }
 
 int User::CheckLog(const std::string &userID) {
-    std::vector<int> a = users_logged.Find(userID);
+    MyVector<int> a = users_logged.Find(userID);
     if (a.empty()) return -1;
     return a[0];
 }

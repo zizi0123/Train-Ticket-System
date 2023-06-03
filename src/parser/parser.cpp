@@ -9,7 +9,7 @@ bool Parser::GetNewLine() {
 void Parser::Process() {
     int section_num = 0;  //切片出的指令数
     int start = 0, end;
-    std::vector<std::string> sections;
+    MyVector<std::string> sections;
     for (int i = 0; i < strlen(line); ++i) {
         if (line[i] == ' ' && line[i + 1] != ' ') {
             start = i + 1;
